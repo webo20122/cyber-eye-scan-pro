@@ -1,4 +1,3 @@
-
 import axios, { AxiosResponse } from 'axios';
 
 // API Configuration
@@ -169,6 +168,12 @@ export const authAPI = {
     
   refreshToken: (refreshToken: string): Promise<AxiosResponse<{ access_token: string }>> =>
     api.post('/auth/refresh_token', { refresh_token: refreshToken }),
+
+  setupMFA: (code?: string): Promise<AxiosResponse<{ secret?: string; qr_code?: string }>> =>
+    code ? api.post('/auth/setup_mfa', { code }) : api.get('/auth/setup_mfa'),
+
+  disableMFA: (password: string): Promise<AxiosResponse> =>
+    api.post('/auth/disable_mfa', { password }),
 };
 
 // Assets API
@@ -206,7 +211,7 @@ export const scansAPI = {
 
 // Findings API
 export const findingsAPI = {
-  list: (params?: { status?: string; severity?: string; scan_id?: string }): Promise<AxiosResponse<Finding[]>> =>
+  list: (params?: { status?: string; severity?: string; scan_id?: string; search?: string }): Promise<AxiosResponse<Finding[]>> =>
     api.get('/findings', { params }),
     
   get: (findingId: string): Promise<AxiosResponse<Finding>> =>
@@ -217,6 +222,9 @@ export const findingsAPI = {
     
   addComment: (findingId: string, comment: string): Promise<AxiosResponse> =>
     api.post(`/findings/${findingId}/comments`, { comment }),
+
+  getComments: (findingId: string): Promise<AxiosResponse<any[]>> =>
+    api.get(`/findings/${findingId}/comments`),
 };
 
 // Dashboard API

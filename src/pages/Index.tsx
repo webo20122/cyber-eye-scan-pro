@@ -5,113 +5,56 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScanTypeCard } from "@/components/ScanTypeCard";
-import { FindingsTable } from "@/components/FindingsTable";
-import { AssetManagement } from "@/components/AssetManagement";
-import { ReportsSection } from "@/components/ReportsSection";
+import { useQuery } from "@tanstack/react-query";
+import { dashboardAPI, scansAPI, findingsAPI, assetsAPI } from "@/services/api";
+import { useAuth } from "@/hooks/useAuth";
+import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
+import { ScanManagement } from "@/components/scans/ScanManagement";
+import { FindingsManagement } from "@/components/findings/FindingsManagement";
+import { AssetManagement } from "@/components/assets/AssetManagement";
+import { ReportsSection } from "@/components/reports/ReportsSection";
+import { ProfileSection } from "@/components/profile/ProfileSection";
 import { 
   Shield, 
-  Wifi, 
-  Globe, 
-  Code, 
   LogOut, 
   Settings, 
   User,
   Activity,
   AlertTriangle,
   CheckCircle,
-  Clock,
   Target,
   FileText,
-  Calendar,
-  TrendingDown,
-  TrendingUp,
-  Database,
-  Search,
   BarChart3,
-  Zap
+  Search,
+  Database,
+  UserCog
 } from "lucide-react";
 import { toast } from "sonner";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
-  const [systemStatus, setSystemStatus] = useState("Healthy");
+  const { user, logout, hasPermission } = useAuth();
 
-  const scanTypes = [
-    {
-      name: "Network Scan",
-      icon: Wifi,
-      description: "Discover devices and services on your network",
-      color: "bg-blue-500"
-    },
-    {
-      name: "Web Application Scan",
-      icon: Globe,
-      description: "Identify web vulnerabilities and security issues",
-      color: "bg-green-500"
-    },
-    {
-      name: "API Security Scan",
-      icon: Code,
-      description: "Test REST APIs for security vulnerabilities",
-      color: "bg-purple-500"
-    }
-  ];
+  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: () => dashboardAPI.getSummary(),
+    enabled: !!user && hasPermission('dashboard:view')
+  });
 
-  const mockFindings = [
-    {
-      id: 1,
-      severity: "Critical",
-      title: "SQL Injection in Login Form",
-      target: "https://example.com/login",
-      status: "New",
-      validated: true
-    },
-    {
-      id: 2,
-      severity: "High",
-      title: "Cross-Site Scripting (XSS)",
-      target: "https://example.com/search",
-      status: "In Progress",
-      validated: true
-    },
-    {
-      id: 3,
-      severity: "Medium",
-      title: "Weak SSL/TLS Configuration",
-      target: "https://api.example.com",
-      status: "New",
-      validated: false
-    }
-  ];
-
-  const dashboardStats = {
-    activeScans: 2,
-    criticalFindings: 3,
-    validatedFindings: 12,
-    assetsMonitored: 24,
-    availableReports: 12,
-    scheduledReports: 5,
-    trendAnalysis: -23
-  };
-
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    } else {
-      navigate("/login");
-    }
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    toast.success("Logged out successfully");
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
   if (!user) return null;
+
+  const stats = dashboardData?.data || {
+    total_scans: 0,
+    scans_by_status: {},
+    total_findings: 0,
+    findings_by_severity: {},
+    recent_scans: []
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -125,23 +68,23 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-blue-900 to-blue-700 bg-clip-text text-transparent">
-                  CyberScan Pro
+                  CyberScan
                 </h1>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-green-600 font-medium">System {systemStatus}</span>
+                  <span className="text-sm text-green-600 font-medium">System Healthy</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-700 font-medium">{user.name}</span>
-                <Badge variant={user.role === "admin" ? "default" : "secondary"} className="capitalize">
-                  {user.role}
+                <span className="text-sm text-gray-700 font-medium">{user.username}</span>
+                <Badge variant={user.roles?.includes("admin") ? "default" : "secondary"} className="capitalize">
+                  {user.roles?.[0] || "User"}
                 </Badge>
               </div>
-              {user.role === "admin" && (
+              {hasPermission('config:manage') && (
                 <Button variant="outline" onClick={() => navigate("/admin")} className="border-blue-200 hover:bg-blue-50">
                   <Settings className="h-4 w-4 mr-2" />
                   Admin
@@ -160,10 +103,10 @@ const Index = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
-            Welcome back, {user.name}!
+            Welcome back, {user.username}!
           </h2>
           <p className="text-gray-600 text-lg">
-            Monitor your security posture and manage vulnerability scans from your comprehensive dashboard.
+            Comprehensive cybersecurity platform for vulnerability management and penetration testing.
           </p>
         </div>
 
@@ -171,12 +114,12 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-blue-900">Active Scans</CardTitle>
-              <Clock className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-sm font-medium text-blue-900">Total Scans</CardTitle>
+              <Search className="h-5 w-5 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-700">{dashboardStats.activeScans}</div>
-              <p className="text-xs text-blue-600 font-medium">Currently running</p>
+              <div className="text-3xl font-bold text-blue-700">{stats.total_scans}</div>
+              <p className="text-xs text-blue-600 font-medium">Security assessments</p>
             </CardContent>
           </Card>
 
@@ -186,37 +129,37 @@ const Index = () => {
               <AlertTriangle className="h-5 w-5 text-red-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-700">{dashboardStats.criticalFindings}</div>
+              <div className="text-3xl font-bold text-red-700">{stats.findings_by_severity?.Critical || 0}</div>
               <p className="text-xs text-red-600 font-medium">Require immediate attention</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-900">Validated Findings</CardTitle>
+              <CardTitle className="text-sm font-medium text-green-900">Total Findings</CardTitle>
               <CheckCircle className="h-5 w-5 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-700">{dashboardStats.validatedFindings}</div>
-              <p className="text-xs text-green-600 font-medium">AI-validated vulnerabilities</p>
+              <div className="text-3xl font-bold text-green-700">{stats.total_findings}</div>
+              <p className="text-xs text-green-600 font-medium">Identified vulnerabilities</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-900">Assets Monitored</CardTitle>
-              <Target className="h-5 w-5 text-purple-600" />
+              <CardTitle className="text-sm font-medium text-purple-900">Running Scans</CardTitle>
+              <Activity className="h-5 w-5 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-purple-700">{dashboardStats.assetsMonitored}</div>
-              <p className="text-xs text-purple-600 font-medium">Total targets</p>
+              <div className="text-3xl font-bold text-purple-700">{stats.scans_by_status?.running || 0}</div>
+              <p className="text-xs text-purple-600 font-medium">Currently active</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Main Navigation Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm">
+          <TabsList className="grid w-full grid-cols-6 bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm">
             <TabsTrigger value="dashboard" className="flex items-center gap-2 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
               <BarChart3 className="h-4 w-4" />
               Dashboard
@@ -237,99 +180,34 @@ const Index = () => {
               <FileText className="h-4 w-4" />
               Reports
             </TabsTrigger>
+            <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-indigo-100 data-[state=active]:text-indigo-700">
+              <UserCog className="h-4 w-4" />
+              Profile
+            </TabsTrigger>
           </TabsList>
 
-          {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
-            {/* Reports Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card className="bg-white/80 backdrop-blur-sm border-gray-200 hover:shadow-lg transition-all duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Available Reports</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{dashboardStats.availableReports}</div>
-                  <p className="text-xs text-muted-foreground">Ready for download</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/80 backdrop-blur-sm border-gray-200 hover:shadow-lg transition-all duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Scheduled Reports</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{dashboardStats.scheduledReports}</div>
-                  <p className="text-xs text-muted-foreground">Automated generation</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white/80 backdrop-blur-sm border-gray-200 hover:shadow-lg transition-all duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Trend Analysis</CardTitle>
-                  <TrendingDown className="h-4 w-4 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{dashboardStats.trendAnalysis}%</div>
-                  <p className="text-xs text-muted-foreground">Critical findings vs last month</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <Card className="bg-white/80 backdrop-blur-sm border-gray-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-blue-600" />
-                  Quick Actions
-                </CardTitle>
-                <CardDescription>Common security tasks and utilities</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Button variant="outline" className="h-20 flex-col border-blue-200 hover:bg-blue-50 hover:border-blue-300">
-                    <Shield className="h-6 w-6 mb-2 text-blue-600" />
-                    Security Reports
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col border-purple-200 hover:bg-purple-50 hover:border-purple-300">
-                    <Settings className="h-6 w-6 mb-2 text-purple-600" />
-                    Scan Configuration
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col border-green-200 hover:bg-green-50 hover:border-green-300">
-                    <Activity className="h-6 w-6 mb-2 text-green-600" />
-                    View Scan History
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <DashboardOverview data={stats} isLoading={dashboardLoading} />
           </TabsContent>
 
-          {/* Scans Tab */}
           <TabsContent value="scans" className="space-y-6">
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-4">Available Scan Types</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {scanTypes.map((scanType, index) => (
-                  <ScanTypeCard key={index} scanType={scanType} />
-                ))}
-              </div>
-            </div>
+            <ScanManagement />
           </TabsContent>
 
-          {/* Findings Tab */}
           <TabsContent value="findings" className="space-y-6">
-            <FindingsTable findings={mockFindings} />
+            <FindingsManagement />
           </TabsContent>
 
-          {/* Assets Tab */}
           <TabsContent value="assets" className="space-y-6">
             <AssetManagement />
           </TabsContent>
 
-          {/* Reports Tab */}
           <TabsContent value="reports" className="space-y-6">
             <ReportsSection />
+          </TabsContent>
+
+          <TabsContent value="profile" className="space-y-6">
+            <ProfileSection />
           </TabsContent>
         </Tabs>
       </div>
