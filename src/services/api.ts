@@ -113,6 +113,7 @@ export interface Scan {
   created_at: string;
   completed_at?: string;
   celery_task_id?: string;
+  raw_results_json?: any;
 }
 
 export interface Finding {
@@ -132,6 +133,7 @@ export interface Finding {
   assigned_to?: string;
   due_date?: string;
   created_at: string;
+  raw_finding_details?: any;
 }
 
 export interface ScanParameters {
