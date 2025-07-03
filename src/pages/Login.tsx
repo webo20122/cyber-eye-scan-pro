@@ -1,29 +1,65 @@
 
-import { Shield } from "lucide-react";
+import { Shield, CheckCircle, Users, BarChart3 } from "lucide-react";
 import { LoginForm } from "@/components/LoginForm";
-import { LoginBranding } from "@/components/LoginBranding";
 
 const Login = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl flex items-center justify-center gap-12">
-        {/* Left Side - Branding & Features */}
-        <LoginBranding />
+        {/* Left Side - Branding */}
+        <div className="hidden lg:flex flex-col justify-center flex-1 max-w-lg">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg">
+                <Shield className="h-12 w-12 text-white" />
+              </div>
+              <div className="text-left">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-900 to-purple-700 bg-clip-text text-transparent">
+                  CyberScan
+                </h1>
+                <p className="text-lg text-gray-600 mt-1">Enterprise Security Platform</p>
+              </div>
+            </div>
+            <p className="text-xl text-gray-700 leading-relaxed">
+              Comprehensive cybersecurity platform for vulnerability management, penetration testing, and security posture assessment.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 p-4 bg-white/60 backdrop-blur-sm rounded-lg border border-blue-100">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <CheckCircle className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Automated Validation</h3>
+                <p className="text-gray-600">AI-powered vulnerability validation and PoC generation</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 p-4 bg-white/60 backdrop-blur-sm rounded-lg border border-purple-100">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <BarChart3 className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Real-Time Monitoring</h3>
+                <p className="text-gray-600">Live dashboards and continuous security assessment</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 p-4 bg-white/60 backdrop-blur-sm rounded-lg border border-green-100">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Users className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Team Collaboration</h3>
+                <p className="text-gray-600">Seamless workflow for security teams and analysts</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Right Side - Login Form */}
         <div className="w-full max-w-md">
-          <div className="text-center mb-8 lg:hidden">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg">
-                <Shield className="h-8 w-8 text-white" />
-              </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-900 to-purple-700 bg-clip-text text-transparent">
-                CyberScan Pro
-              </h1>
-            </div>
-            <p className="text-gray-600">Advanced Security Scanning Platform</p>
-          </div>
-
           <LoginForm />
         </div>
       </div>

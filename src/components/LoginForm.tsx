@@ -6,75 +6,77 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Eye, EyeOff, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
-import { DemoCredentials } from "./DemoCredentials";
+import { Eye, EyeOff, AlertTriangle, Shield } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
-    password: ""
+    username: "",
+    password: "",
+    mfa_code: ""
   });
   const [error, setError] = useState("");
+  const [showMFA, setShowMFA] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    // Simulate API call
-    setTimeout(() => {
-      if (formData.email === "admin@cyberscan.com" && formData.password === "admin123") {
-        localStorage.setItem("user", JSON.stringify({ 
-          email: formData.email, 
-          role: "admin",
-          name: "Admin User"
-        }));
-        toast.success("Welcome back, Admin!");
-        navigate("/admin");
-      } else if (formData.email === "user@cyberscan.com" && formData.password === "user123") {
-        localStorage.setItem("user", JSON.stringify({ 
-          email: formData.email, 
-          role: "user",
-          name: "Security Analyst"
-        }));
-        toast.success("Login successful!");
+    try {
+      const success = await login(formData.username, formData.password, formData.mfa_code || undefined);
+      if (success) {
         navigate("/");
-      } else {
-        setError("Invalid email or password");
       }
+    } catch (error: any) {
+      if (error.response?.status === 401 && error.response?.data?.message?.includes('MFA')) {
+        setShowMFA(true);
+        setError("Please enter your MFA code");
+      } else {
+        setError(error.response?.data?.message || "Login failed");
+      }
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
-    <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-xl">
+    <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm border-gray-200 shadow-xl">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-        <CardDescription className="text-lg">
-          Sign in to access your security dashboard
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg">
+            <Shield className="h-6 w-6 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-900 to-purple-700 bg-clip-text text-transparent">
+            CyberScan
+          </h1>
+        </div>
+        <CardTitle className="text-xl font-bold">Security Platform Login</CardTitle>
+        <CardDescription>
+          Access your cybersecurity dashboard
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
+            <Label htmlFor="username">Username</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="h-12 bg-white/50 border-gray-300 focus:border-blue-500"
+              id="username"
+              type="text"
+              placeholder="Enter your username"
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              className="h-11 bg-white/70 border-gray-300 focus:border-blue-500"
               required
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+            <Label htmlFor="password">Password</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -82,20 +84,35 @@ export const LoginForm = () => {
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="h-12 bg-white/50 border-gray-300 focus:border-blue-500 pr-12"
+                className="h-11 bg-white/70 border-gray-300 focus:border-blue-500 pr-10"
                 required
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
           </div>
+
+          {showMFA && (
+            <div className="space-y-2">
+              <Label htmlFor="mfa_code">MFA Code</Label>
+              <Input
+                id="mfa_code"
+                type="text"
+                placeholder="Enter 6-digit MFA code"
+                value={formData.mfa_code}
+                onChange={(e) => setFormData({ ...formData, mfa_code: e.target.value })}
+                className="h-11 bg-white/70 border-gray-300 focus:border-blue-500"
+                maxLength={6}
+              />
+            </div>
+          )}
 
           {error && (
             <Alert variant="destructive" className="bg-red-50 border-red-200">
@@ -106,7 +123,7 @@ export const LoginForm = () => {
 
           <Button 
             type="submit" 
-            className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg" 
+            className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg" 
             disabled={isLoading}
           >
             {isLoading ? (
@@ -120,7 +137,15 @@ export const LoginForm = () => {
           </Button>
         </form>
 
-        <DemoCredentials />
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <div className="text-sm text-gray-600 text-center">
+            <p className="font-medium mb-2">Demo Access</p>
+            <div className="bg-blue-50 p-3 rounded-lg space-y-1 text-xs">
+              <div>Admin: <code className="bg-white px-1 rounded">admin</code> / <code className="bg-white px-1 rounded">admin123</code></div>
+              <div>Analyst: <code className="bg-white px-1 rounded">analyst</code> / <code className="bg-white px-1 rounded">analyst123</code></div>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
