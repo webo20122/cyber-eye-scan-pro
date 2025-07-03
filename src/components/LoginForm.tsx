@@ -141,8 +141,8 @@ export const LoginForm = () => {
           <div className="text-sm text-gray-600 text-center">
             <p className="font-medium mb-2">Demo Access</p>
             <div className="bg-blue-50 p-3 rounded-lg space-y-1 text-xs">
-              <div>Admin: <code className="bg-white px-1 rounded">admin</code> / <code className="bg-white px-1 rounded">admin123</code></div>
-              <div>Analyst: <code className="bg-white px-1 rounded">analyst</code> / <code className="bg-white px-1 rounded">analyst123</code></div>
+              <div>Admin: <code className="bg-white px-1 rounded">admin@cyberscan.com</code> / <code className="bg-white px-1 rounded">admin123</code></div>
+              <div>Analyst: <code className="bg-white px-1 rounded">user@cyberscan.com</code> / <code className="bg-white px-1 rounded">user123</code></div>
             </div>
           </div>
         </div>
