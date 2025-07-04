@@ -1,7 +1,13 @@
+
 import axios, { AxiosResponse } from 'axios';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+
+// Check if we're in demo mode
+const isDemoMode = () => {
+  return localStorage.getItem('demo_user') !== null;
+};
 
 // Create axios instance
 const api = axios.create({
@@ -38,6 +44,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Skip token refresh logic in demo mode
+    if (isDemoMode()) {
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config;
     
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -67,6 +78,88 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Mock data for demo mode
+const mockData = {
+  dashboard: {
+    total_scans: 12,
+    scans_by_status: { completed: 8, running: 2, failed: 1, pending: 1 },
+    total_findings: 47,
+    findings_by_severity: { Critical: 3, High: 8, Medium: 15, Low: 18, Informational: 3 },
+    recent_scans: [
+      {
+        scan_id: 'scan-001',
+        name: 'Production Network Scan',
+        asset_id: 'asset-001',
+        status: 'completed' as const,
+        progress: 100,
+        total_findings_count: 12,
+        total_attack_paths_count: 3,
+        created_at: '2024-01-15T10:00:00Z',
+        completed_at: '2024-01-15T11:30:00Z'
+      }
+    ]
+  },
+  scans: [
+    {
+      scan_id: 'scan-001',
+      name: 'Production Network Scan',
+      asset_id: 'asset-001',
+      status: 'completed' as const,
+      progress: 100,
+      total_findings_count: 12,
+      total_attack_paths_count: 3,
+      created_at: '2024-01-15T10:00:00Z',
+      completed_at: '2024-01-15T11:30:00Z',
+      celery_task_id: 'task-001',
+      raw_results_json: { scan_type: 'network', tools_used: ['nmap', 'zap'] }
+    }
+  ],
+  assets: [
+    {
+      asset_id: 'asset-001',
+      name: 'Production Server',
+      type: 'IP' as const,
+      value: '192.168.1.100',
+      description: 'Main production server',
+      owner_id: 'user-001',
+      team_id: 'team-001',
+      tags: ['production', 'critical'],
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-15T00:00:00Z'
+    }
+  ],
+  findings: [
+    {
+      finding_id: 'finding-001',
+      scan_id: 'scan-001',
+      asset_id: 'asset-001',
+      name: 'SQL Injection Vulnerability',
+      severity: 'Critical' as const,
+      description: 'SQL injection vulnerability found in login form',
+      recommendation: 'Use parameterized queries and input validation',
+      cvss_score: 9.8,
+      cve_id: 'CVE-2024-0001',
+      owasp_top_10: 'A03:2021 – Injection',
+      status: 'new' as const,
+      validated_status: true,
+      poc_details: 'Payload: \' OR 1=1 --',
+      created_at: '2024-01-15T11:00:00Z',
+      raw_finding_details: { scanner: 'custom', confidence: 'high' }
+    }
+  ]
+};
+
+// Helper function to create mock API response
+const createMockResponse = <T>(data: T): Promise<AxiosResponse<T>> => {
+  return Promise.resolve({
+    data,
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    config: {} as any
+  });
+};
 
 // API Service Types
 export interface LoginRequest {
@@ -181,52 +274,52 @@ export const authAPI = {
 // Assets API
 export const assetsAPI = {
   list: (): Promise<AxiosResponse<Asset[]>> =>
-    api.get('/assets'),
+    isDemoMode() ? createMockResponse(mockData.assets) : api.get('/assets'),
     
   create: (data: Partial<Asset>): Promise<AxiosResponse<Asset>> =>
-    api.post('/assets', data),
+    isDemoMode() ? createMockResponse({ ...mockData.assets[0], ...data } as Asset) : api.post('/assets', data),
     
   get: (assetId: string): Promise<AxiosResponse<Asset>> =>
-    api.get(`/assets/${assetId}`),
+    isDemoMode() ? createMockResponse(mockData.assets[0]) : api.get(`/assets/${assetId}`),
     
   update: (assetId: string, data: Partial<Asset>): Promise<AxiosResponse<Asset>> =>
-    api.put(`/assets/${assetId}`, data),
+    isDemoMode() ? createMockResponse({ ...mockData.assets[0], ...data } as Asset) : api.put(`/assets/${assetId}`, data),
     
   delete: (assetId: string): Promise<AxiosResponse> =>
-    api.delete(`/assets/${assetId}`),
+    isDemoMode() ? createMockResponse({}) : api.delete(`/assets/${assetId}`),
 };
 
 // Scans API
 export const scansAPI = {
   list: (): Promise<AxiosResponse<Scan[]>> =>
-    api.get('/scans'),
+    isDemoMode() ? createMockResponse(mockData.scans) : api.get('/scans'),
     
   initiate: (data: { asset_id: string; scan_name: string; scan_parameters: ScanParameters }): Promise<AxiosResponse<{ scan_id: string; celery_task_id: string }>> =>
-    api.post('/scans/initiate', data),
+    isDemoMode() ? createMockResponse({ scan_id: 'scan-new', celery_task_id: 'task-new' }) : api.post('/scans/initiate', data),
     
   get: (scanId: string): Promise<AxiosResponse<Scan>> =>
-    api.get(`/scans/${scanId}`),
+    isDemoMode() ? createMockResponse(mockData.scans[0]) : api.get(`/scans/${scanId}`),
     
   cancel: (scanId: string): Promise<AxiosResponse> =>
-    api.post(`/scans/${scanId}/cancel`),
+    isDemoMode() ? createMockResponse({}) : api.post(`/scans/${scanId}/cancel`),
 };
 
 // Findings API
 export const findingsAPI = {
   list: (params?: { status?: string; severity?: string; scan_id?: string; search?: string }): Promise<AxiosResponse<Finding[]>> =>
-    api.get('/findings', { params }),
+    isDemoMode() ? createMockResponse(mockData.findings) : api.get('/findings', { params }),
     
   get: (findingId: string): Promise<AxiosResponse<Finding>> =>
-    api.get(`/findings/${findingId}`),
+    isDemoMode() ? createMockResponse(mockData.findings[0]) : api.get(`/findings/${findingId}`),
     
   update: (findingId: string, data: Partial<Finding>): Promise<AxiosResponse<Finding>> =>
-    api.put(`/findings/${findingId}`, data),
+    isDemoMode() ? createMockResponse({ ...mockData.findings[0], ...data } as Finding) : api.put(`/findings/${findingId}`, data),
     
   addComment: (findingId: string, comment: string): Promise<AxiosResponse> =>
-    api.post(`/findings/${findingId}/comments`, { comment }),
+    isDemoMode() ? createMockResponse({}) : api.post(`/findings/${findingId}/comments`, { comment }),
 
   getComments: (findingId: string): Promise<AxiosResponse<any[]>> =>
-    api.get(`/findings/${findingId}/comments`),
+    isDemoMode() ? createMockResponse([]) : api.get(`/findings/${findingId}/comments`),
 };
 
 // Dashboard API
@@ -238,7 +331,7 @@ export const dashboardAPI = {
     findings_by_severity: Record<string, number>;
     recent_scans: Scan[];
   }>> =>
-    api.get('/dashboard/summary'),
+    isDemoMode() ? createMockResponse(mockData.dashboard) : api.get('/dashboard/summary'),
 };
 
 export default api;
