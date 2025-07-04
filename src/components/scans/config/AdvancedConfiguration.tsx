@@ -1,26 +1,32 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { NetworkScanConfig } from "./NetworkScanConfig";
-import { WebApplicationScanConfig } from "./WebApplicationScanConfig";
-import { SastScanConfig } from "./SastScanConfig";
-import { CredentialsLeakConfig } from "./CredentialsLeakConfig";
-import { DatabaseEnumConfig } from "./DatabaseEnumConfig";
-import { PassiveReconConfig } from "./PassiveReconConfig";
-import { SshSecurityConfig } from "./SshSecurityConfig";
-import { MailServerConfig } from "./MailServerConfig";
-import { ShodanLookupConfig } from "./ShodanLookupConfig";
+import { NetworkScanAdvancedConfig } from "./NetworkScanAdvancedConfig";
+import { WebApplicationAdvancedConfig } from "./WebApplicationAdvancedConfig";
+import { VulnerabilityCheckAdvancedConfig } from "./VulnerabilityCheckAdvancedConfig";
+import { ActiveDirectoryAdvancedConfig } from "./ActiveDirectoryAdvancedConfig";
 
 interface ScanModules {
   enable_network_scan: boolean;
   enable_web_application_scan: boolean;
+  enable_vulnerability_check: boolean;
+  enable_active_directory_enumeration: boolean;
   enable_credentials_leak: boolean;
   enable_database_enum_check: boolean;
-  enable_sast_scan: boolean;
-  enable_vulnerability_check: boolean;
-  enable_passive_recon: boolean;
-  enable_ssh_security_check: boolean;
+  enable_desktop_pe_analysis: boolean;
+  enable_exploitation: boolean;
+  enable_internal_vuln_scan_gvm: boolean;
   enable_mail_server_check: boolean;
+  enable_snmp_enum: boolean;
   enable_shodan_lookup: boolean;
+  enable_ssh_security_check: boolean;
+  enable_bruteforce: boolean;
+  enable_passive_recon: boolean;
+  enable_wireless_scan: boolean;
+  enable_wireless_adv_scan: boolean;
+  enable_sast_scan: boolean;
+  enable_api_scan: boolean;
+  enable_adaptive_attack_path_mapping: boolean;
+  enable_automated_vulnerability_validation: boolean;
 }
 
 interface AdvancedConfigurationProps {
@@ -29,20 +35,10 @@ interface AdvancedConfigurationProps {
   setNetworkParams: (params: any) => void;
   webParams: any;
   setWebParams: (params: any) => void;
-  sastParams: any;
-  setSastParams: (params: any) => void;
-  credentialsParams: any;
-  setCredentialsParams: (params: any) => void;
-  databaseParams: any;
-  setDatabaseParams: (params: any) => void;
-  passiveReconParams: any;
-  setPassiveReconParams: (params: any) => void;
-  sshParams: any;
-  setSshParams: (params: any) => void;
-  mailParams: any;
-  setMailParams: (params: any) => void;
-  shodanParams: any;
-  setShodanParams: (params: any) => void;
+  vulnParams: any;
+  setVulnParams: (params: any) => void;
+  adParams: any;
+  setAdParams: (params: any) => void;
 }
 
 export const AdvancedConfiguration = ({
@@ -51,92 +47,65 @@ export const AdvancedConfiguration = ({
   setNetworkParams,
   webParams,
   setWebParams,
-  sastParams,
-  setSastParams,
-  credentialsParams,
-  setCredentialsParams,
-  databaseParams,
-  setDatabaseParams,
-  passiveReconParams,
-  setPassiveReconParams,
-  sshParams,
-  setSshParams,
-  mailParams,
-  setMailParams,
-  shodanParams,
-  setShodanParams
+  vulnParams,
+  setVulnParams,
+  adParams,
+  setAdParams
 }: AdvancedConfigurationProps) => {
-  if (!Object.values(scanModules).some(Boolean)) {
+  const hasMvpModules = scanModules.enable_network_scan || 
+                       scanModules.enable_web_application_scan || 
+                       scanModules.enable_vulnerability_check || 
+                       scanModules.enable_active_directory_enumeration;
+
+  if (!hasMvpModules) {
     return null;
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Advanced Configuration</CardTitle>
+        <CardTitle className="text-lg">Advanced Module Configuration</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-8">
+      <CardContent className="space-y-6">
         {scanModules.enable_network_scan && (
-          <NetworkScanConfig 
+          <NetworkScanAdvancedConfig 
             networkParams={networkParams}
             setNetworkParams={setNetworkParams}
           />
         )}
 
         {scanModules.enable_web_application_scan && (
-          <WebApplicationScanConfig 
+          <WebApplicationAdvancedConfig 
             webParams={webParams}
             setWebParams={setWebParams}
           />
         )}
 
-        {scanModules.enable_sast_scan && (
-          <SastScanConfig 
-            sastParams={sastParams}
-            setSastParams={setSastParams}
+        {scanModules.enable_vulnerability_check && (
+          <VulnerabilityCheckAdvancedConfig 
+            vulnParams={vulnParams}
+            setVulnParams={setVulnParams}
           />
         )}
 
-        {scanModules.enable_credentials_leak && (
-          <CredentialsLeakConfig 
-            credentialsParams={credentialsParams}
-            setCredentialsParams={setCredentialsParams}
+        {scanModules.enable_active_directory_enumeration && (
+          <ActiveDirectoryAdvancedConfig 
+            adParams={adParams}
+            setAdParams={setAdParams}
           />
         )}
 
-        {scanModules.enable_database_enum_check && (
-          <DatabaseEnumConfig 
-            databaseParams={databaseParams}
-            setDatabaseParams={setDatabaseParams}
-          />
-        )}
-
-        {scanModules.enable_passive_recon && (
-          <PassiveReconConfig 
-            passiveReconParams={passiveReconParams}
-            setPassiveReconParams={setPassiveReconParams}
-          />
-        )}
-
-        {scanModules.enable_ssh_security_check && (
-          <SshSecurityConfig 
-            sshParams={sshParams}
-            setSshParams={setSshParams}
-          />
-        )}
-
-        {scanModules.enable_mail_server_check && (
-          <MailServerConfig 
-            mailParams={mailParams}
-            setMailParams={setMailParams}
-          />
-        )}
-
-        {scanModules.enable_shodan_lookup && (
-          <ShodanLookupConfig 
-            shodanParams={shodanParams}
-            setShodanParams={setShodanParams}
-          />
+        {/* Placeholder for non-MVP modules */}
+        {(scanModules.enable_credentials_leak || 
+          scanModules.enable_database_enum_check || 
+          scanModules.enable_sast_scan) && (
+          <div className="p-4 border rounded-lg bg-gray-50 border-gray-200">
+            <h4 className="font-medium text-gray-700 mb-2">Additional Module Configuration</h4>
+            <p className="text-sm text-gray-600">
+              Configuration panels for additional modules will be available in the next update.
+              These modules are enabled but will use default parameters.
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>

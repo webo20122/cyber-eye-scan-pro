@@ -7,13 +7,14 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import InitialSetup from "./pages/InitialSetup";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
+const AppRoutes = () => {
+  const { user, isLoading, setupRequired } = useAuth();
 
   if (isLoading) {
     return (
@@ -26,11 +27,36 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" />;
+  // Redirect to setup if required
+  if (setupRequired) {
+    return (
+      <Routes>
+        <Route path="/initial-setup" element={<InitialSetup />} />
+        <Route path="*" element={<Navigate to="/initial-setup" replace />} />
+      </Routes>
+    );
   }
 
-  return <>{children}</>;
+  // Redirect to login if not authenticated
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
+
+  // Authenticated routes
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/admin" element={<Admin />} />
+      <Route path="/login" element={<Navigate to="/" replace />} />
+      <Route path="/initial-setup" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
 };
 
 const App = () => (
@@ -40,20 +66,7 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/admin" element={
-              <ProtectedRoute>
-                <Admin />
-              </ProtectedRoute>
-            } />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            } />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppRoutes />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

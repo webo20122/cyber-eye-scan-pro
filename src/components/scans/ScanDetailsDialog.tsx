@@ -14,7 +14,9 @@ import {
   Target,
   Bug,
   Route,
-  Code
+  Code,
+  Timer,
+  Calendar
 } from "lucide-react";
 
 interface ScanDetailsDialogProps {
@@ -28,7 +30,7 @@ export const ScanDetailsDialog = ({ scanId, open, onOpenChange }: ScanDetailsDia
     queryKey: ['scan', scanId],
     queryFn: () => scansAPI.get(scanId),
     enabled: open && !!scanId,
-    refetchInterval: 5000
+    refetchInterval: scan => scan?.data?.status === 'running' ? 5000 : false
   });
 
   if (isLoading || !scanData?.data) {
@@ -72,29 +74,34 @@ export const ScanDetailsDialog = ({ scanId, open, onOpenChange }: ScanDetailsDia
     }
   };
 
-  const formatDuration = (start: string, end?: string) => {
-    const startTime = new Date(start);
-    const endTime = end ? new Date(end) : new Date();
-    const diff = endTime.getTime() - startTime.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(minutes / 60);
+  const formatDuration = (seconds?: number) => {
+    if (!seconds) return 'N/A';
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
     
     if (hours > 0) {
-      return `${hours}h ${minutes % 60}m`;
+      return `${hours}h ${minutes}m ${secs}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${secs}s`;
     }
-    return `${minutes}m`;
+    return `${secs}s`;
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {getStatusIcon(scan.status)}
-            {scan.name}
+            {scan.scan_name}
           </DialogTitle>
           <DialogDescription>
-            Detailed information about the security scan
+            Comprehensive security scan details and progress information
           </DialogDescription>
         </DialogHeader>
 
@@ -105,73 +112,103 @@ export const ScanDetailsDialog = ({ scanId, open, onOpenChange }: ScanDetailsDia
               <CardTitle className="text-lg">Scan Overview</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <span className="font-medium">Status:</span>
                     <Badge className={getStatusColor(scan.status)}>
-                      {scan.status}
+                      {scan.status.toUpperCase()}
                     </Badge>
                   </div>
-                  <div>
-                    <span className="font-medium">Started:</span> {new Date(scan.created_at).toLocaleString()}
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">Created:</span> 
+                    <span className="text-sm">{formatDateTime(scan.created_at)}</span>
                   </div>
-                  {scan.completed_at && (
-                    <div>
-                      <span className="font-medium">Completed:</span> {new Date(scan.completed_at).toLocaleString()}
+                  {scan.start_time && (
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-green-500" />
+                      <span className="font-medium">Started:</span> 
+                      <span className="text-sm">{formatDateTime(scan.start_time)}</span>
                     </div>
                   )}
-                  <div>
-                    <span className="font-medium">Duration:</span> {formatDuration(scan.created_at, scan.completed_at)}
+                  {scan.end_time && (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-blue-500" />
+                      <span className="font-medium">Completed:</span> 
+                      <span className="text-sm">{formatDateTime(scan.end_time)}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="space-y-3">
+                  {scan.duration_seconds !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <Timer className="h-4 w-4 text-purple-500" />
+                      <span className="font-medium">Duration:</span> 
+                      <span className="text-sm">{formatDuration(scan.duration_seconds)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Target className="h-4 w-4 text-orange-500" />
+                    <span className="font-medium">Asset ID:</span> 
+                    <span className="text-sm font-mono">{scan.asset_id}</span>
                   </div>
                 </div>
+
                 <div className="space-y-3">
-                  <div>
-                    <span className="font-medium">Progress:</span> {scan.progress}%
-                  </div>
-                  {scan.status === 'running' && (
-                    <Progress value={scan.progress} className="w-full" />
-                  )}
-                  {scan.celery_task_id && (
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Task ID:</span> {scan.celery_task_id}
+                  <div className="text-center p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border border-red-200">
+                    <div className="text-2xl font-bold text-red-700">{scan.total_findings_count}</div>
+                    <div className="text-sm text-red-600 flex items-center justify-center gap-1">
+                      <Bug className="h-3 w-3" />
+                      Security Findings
                     </div>
-                  )}
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                    <div className="text-2xl font-bold text-purple-700">{scan.total_attack_paths_count}</div>
+                    <div className="text-sm text-purple-600 flex items-center justify-center gap-1">
+                      <Route className="h-3 w-3" />
+                      Attack Paths
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Results Summary */}
-          {scan.status === 'completed' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="border-l-4 border-l-red-500">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3">
-                    <Bug className="h-8 w-8 text-red-600" />
-                    <div>
-                      <div className="text-2xl font-bold text-red-700">{scan.total_findings_count}</div>
-                      <div className="text-sm text-gray-600">Security Findings</div>
+          {/* Progress Updates - Real-time for running scans */}
+          {scan.progress_updates && scan.progress_updates.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Progress Updates
+                </CardTitle>
+                <CardDescription>
+                  Real-time scan progress and module execution status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {scan.progress_updates.map((update: any, index: number) => (
+                    <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-700">{update.message || update}</div>
+                        {update.timestamp && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {formatDateTime(update.timestamp)}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-l-purple-500">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3">
-                    <Route className="h-8 w-8 text-purple-600" />
-                    <div>
-                      <div className="text-2xl font-bold text-purple-700">{scan.total_attack_paths_count}</div>
-                      <div className="text-sm text-gray-600">Attack Paths</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
-          {/* Raw Results */}
+          {/* Raw Results JSON - Structured scan output */}
           {scan.raw_results_json && (
             <Card>
               <CardHeader>
@@ -180,35 +217,14 @@ export const ScanDetailsDialog = ({ scanId, open, onOpenChange }: ScanDetailsDia
                   Raw Scan Results
                 </CardTitle>
                 <CardDescription>
-                  Complete structured output from the scan modules
+                  Complete structured output from all scan modules
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <pre className="text-sm overflow-auto max-h-96">
+                <div className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto">
+                  <pre className="text-sm whitespace-pre-wrap max-h-96 overflow-auto">
                     {JSON.stringify(scan.raw_results_json, null, 2)}
                   </pre>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Scan Progress Details */}
-          {scan.status === 'running' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Real-time Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span>Overall Progress</span>
-                    <span className="font-medium">{scan.progress}%</span>
-                  </div>
-                  <Progress value={scan.progress} className="w-full" />
-                  <div className="text-sm text-gray-600">
-                    {scan.progress < 100 ? "Scan in progress..." : "Finalizing results..."}
-                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -225,9 +241,16 @@ export const ScanDetailsDialog = ({ scanId, open, onOpenChange }: ScanDetailsDia
               </CardHeader>
               <CardContent>
                 <p className="text-red-700">
-                  The scan encountered an error and could not complete successfully. 
-                  Please check the scan configuration and try again.
+                  The comprehensive security scan encountered an error and could not complete successfully. 
+                  Please review the scan configuration and target accessibility, then try again.
                 </p>
+                {scan.raw_results_json?.error && (
+                  <div className="mt-3 p-3 bg-red-100 rounded-lg">
+                    <pre className="text-sm text-red-800 whitespace-pre-wrap">
+                      {JSON.stringify(scan.raw_results_json.error, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

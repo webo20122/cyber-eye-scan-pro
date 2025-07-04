@@ -1,17 +1,12 @@
 
 import axios, { AxiosResponse } from 'axios';
 
-// API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
-
-// Check if we're in demo mode
-const isDemoMode = () => {
-  return localStorage.getItem('demo_user') !== null;
-};
+// API Configuration with environment variable support
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 // Create axios instance
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${API_BASE_URL}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -40,15 +35,10 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor for token refresh
+// Response interceptor for automatic token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // Skip token refresh logic in demo mode
-    if (isDemoMode()) {
-      return Promise.reject(error);
-    }
-
     const originalRequest = error.config;
     
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -57,7 +47,7 @@ api.interceptors.response.use(
       const refreshToken = tokenManager.getRefreshToken();
       if (refreshToken) {
         try {
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh_token`, {
+          const response = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh_token`, {
             refresh_token: refreshToken,
           });
           
@@ -79,86 +69,17 @@ api.interceptors.response.use(
   }
 );
 
-// Mock data for demo mode
-const mockData = {
-  dashboard: {
-    total_scans: 12,
-    scans_by_status: { completed: 8, running: 2, failed: 1, pending: 1 },
-    total_findings: 47,
-    findings_by_severity: { Critical: 3, High: 8, Medium: 15, Low: 18, Informational: 3 },
-    recent_scans: [
-      {
-        scan_id: 'scan-001',
-        name: 'Production Network Scan',
-        asset_id: 'asset-001',
-        status: 'completed' as const,
-        progress: 100,
-        total_findings_count: 12,
-        total_attack_paths_count: 3,
-        created_at: '2024-01-15T10:00:00Z',
-        completed_at: '2024-01-15T11:30:00Z'
-      }
-    ]
-  },
-  scans: [
-    {
-      scan_id: 'scan-001',
-      name: 'Production Network Scan',
-      asset_id: 'asset-001',
-      status: 'completed' as const,
-      progress: 100,
-      total_findings_count: 12,
-      total_attack_paths_count: 3,
-      created_at: '2024-01-15T10:00:00Z',
-      completed_at: '2024-01-15T11:30:00Z',
-      celery_task_id: 'task-001',
-      raw_results_json: { scan_type: 'network', tools_used: ['nmap', 'zap'] }
+// Check if initial setup is required
+export const checkInitialSetup = async (): Promise<boolean> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/v1/auth/current_user`);
+    return true; // Setup is complete if we can get current user
+  } catch (error: any) {
+    if (error.response?.status === 404 || error.response?.status === 401) {
+      return false; // Setup required
     }
-  ],
-  assets: [
-    {
-      asset_id: 'asset-001',
-      name: 'Production Server',
-      type: 'IP' as const,
-      value: '192.168.1.100',
-      description: 'Main production server',
-      owner_id: 'user-001',
-      team_id: 'team-001',
-      tags: ['production', 'critical'],
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-15T00:00:00Z'
-    }
-  ],
-  findings: [
-    {
-      finding_id: 'finding-001',
-      scan_id: 'scan-001',
-      asset_id: 'asset-001',
-      name: 'SQL Injection Vulnerability',
-      severity: 'Critical' as const,
-      description: 'SQL injection vulnerability found in login form',
-      recommendation: 'Use parameterized queries and input validation',
-      cvss_score: 9.8,
-      cve_id: 'CVE-2024-0001',
-      owasp_top_10: 'A03:2021 – Injection',
-      status: 'new' as const,
-      validated_status: true,
-      poc_details: 'Payload: \' OR 1=1 --',
-      created_at: '2024-01-15T11:00:00Z',
-      raw_finding_details: { scanner: 'custom', confidence: 'high' }
-    }
-  ]
-};
-
-// Helper function to create mock API response
-const createMockResponse = <T>(data: T): Promise<AxiosResponse<T>> => {
-  return Promise.resolve({
-    data,
-    status: 200,
-    statusText: 'OK',
-    headers: {},
-    config: {} as any
-  });
+    return true; // Assume setup is complete for other errors
+  }
 };
 
 // API Service Types
@@ -184,10 +105,11 @@ export interface User {
 
 export interface Asset {
   asset_id: string;
-  name: string;
-  type: 'IP' | 'Domain' | 'WebApp' | 'CodeRepo' | 'CloudAccount' | 'NetworkSegment';
-  value: string;
+  asset_name: string;
+  asset_type: 'IP' | 'Domain' | 'WebApp' | 'CodeRepo' | 'CloudAccount' | 'NetworkSegment';
+  target_value: string;
   description?: string;
+  is_active: boolean;
   owner_id: string;
   team_id?: string;
   tags: string[];
@@ -197,23 +119,25 @@ export interface Asset {
 
 export interface Scan {
   scan_id: string;
-  name: string;
+  scan_name: string;
   asset_id: string;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-  progress: number;
+  start_time?: string;
+  end_time?: string;
+  duration_seconds?: number;
   total_findings_count: number;
   total_attack_paths_count: number;
-  created_at: string;
-  completed_at?: string;
-  celery_task_id?: string;
+  progress_updates?: any[];
   raw_results_json?: any;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Finding {
   finding_id: string;
   scan_id: string;
   asset_id: string;
-  name: string;
+  finding_name: string;
   severity: 'Critical' | 'High' | 'Medium' | 'Low' | 'Informational';
   description: string;
   recommendation: string;
@@ -226,28 +150,89 @@ export interface Finding {
   assigned_to?: string;
   due_date?: string;
   created_at: string;
+  updated_at: string;
   raw_finding_details?: any;
 }
 
 export interface ScanParameters {
   target_ip?: string;
   target_domain?: string;
-  enable_network_scan: boolean;
+  
+  // Core modules
+  enable_network_scan?: boolean;
   network_scan_params?: {
     nmap_args?: string;
     ports?: string;
+    enable_os_detection?: boolean;
+    enable_service_version_detection?: boolean;
+    enable_script_scanning?: boolean;
+    enable_cve_lookup?: boolean;
   };
-  enable_web_application_scan: boolean;
+  
+  enable_web_application_scan?: boolean;
   web_application_scan_params?: {
     enable_zap_scan?: boolean;
     zap_address?: string;
+    enable_zap_auth?: boolean;
+    web_login_url?: string;
+    web_username?: string;
+    web_password?: string;
+    enable_nikto_scan?: boolean;
+    enable_gobuster_scan?: boolean;
+    gobuster_wordlist_path?: string;
   };
-  enable_credentials_leak: boolean;
-  enable_database_enum_check: boolean;
-  enable_sast_scan: boolean;
-  sast_scan_params?: {
-    code_repo_url?: string;
+  
+  enable_vulnerability_check?: boolean;
+  vulnerability_check_params?: {
+    target_software_name?: string;
+    target_cve_id?: string;
+    enable_vulners_lookup?: boolean;
+    enable_nvd_lookup?: boolean;
+    enable_vendor_advisories?: boolean;
+    enable_nessus_integration?: boolean;
+    enable_qualys_integration?: boolean;
   };
+  
+  enable_active_directory_enumeration?: boolean;
+  active_directory_enumeration_params?: {
+    ldap_host: string;
+    ldap_port?: number;
+    ldap_use_tls?: boolean;
+    ldap_username?: string;
+    ldap_password?: string;
+    ldap_base_dn: string;
+    enable_user_enum?: boolean;
+    enable_group_enum?: boolean;
+    enable_computer_enum?: boolean;
+    enable_password_policy_check?: boolean;
+  };
+  
+  // Additional modules (with enable flags for future implementation)
+  enable_credentials_leak?: boolean;
+  enable_database_enum_check?: boolean;
+  enable_desktop_pe_analysis?: boolean;
+  enable_exploitation?: boolean;
+  enable_internal_vuln_scan_gvm?: boolean;
+  enable_mail_server_check?: boolean;
+  enable_snmp_enum?: boolean;
+  enable_shodan_lookup?: boolean;
+  enable_ssh_security_check?: boolean;
+  enable_bruteforce?: boolean;
+  enable_passive_recon?: boolean;
+  enable_wireless_scan?: boolean;
+  enable_wireless_adv_scan?: boolean;
+  enable_sast_scan?: boolean;
+  enable_api_scan?: boolean;
+  enable_adaptive_attack_path_mapping?: boolean;
+  enable_automated_vulnerability_validation?: boolean;
+}
+
+export interface InitialSetupRequest {
+  database_url: string;
+  aes_key: string;
+  admin_username: string;
+  admin_email: string;
+  admin_password: string;
 }
 
 // Auth API
@@ -271,55 +256,79 @@ export const authAPI = {
     api.post('/auth/disable_mfa', { password }),
 };
 
+// Initial Setup API
+export const initialSetupAPI = {
+  setup: (data: InitialSetupRequest): Promise<AxiosResponse> =>
+    axios.post(`${API_BASE_URL}/initial_setup`, data),
+};
+
 // Assets API
 export const assetsAPI = {
   list: (): Promise<AxiosResponse<Asset[]>> =>
-    isDemoMode() ? createMockResponse(mockData.assets) : api.get('/assets'),
+    api.get('/assets'),
     
   create: (data: Partial<Asset>): Promise<AxiosResponse<Asset>> =>
-    isDemoMode() ? createMockResponse({ ...mockData.assets[0], ...data } as Asset) : api.post('/assets', data),
+    api.post('/assets', data),
     
   get: (assetId: string): Promise<AxiosResponse<Asset>> =>
-    isDemoMode() ? createMockResponse(mockData.assets[0]) : api.get(`/assets/${assetId}`),
+    api.get(`/assets/${assetId}`),
     
   update: (assetId: string, data: Partial<Asset>): Promise<AxiosResponse<Asset>> =>
-    isDemoMode() ? createMockResponse({ ...mockData.assets[0], ...data } as Asset) : api.put(`/assets/${assetId}`, data),
+    api.put(`/assets/${assetId}`, data),
     
   delete: (assetId: string): Promise<AxiosResponse> =>
-    isDemoMode() ? createMockResponse({}) : api.delete(`/assets/${assetId}`),
+    api.delete(`/assets/${assetId}`),
 };
 
 // Scans API
 export const scansAPI = {
   list: (): Promise<AxiosResponse<Scan[]>> =>
-    isDemoMode() ? createMockResponse(mockData.scans) : api.get('/scans'),
+    api.get('/scans'),
     
   initiate: (data: { asset_id: string; scan_name: string; scan_parameters: ScanParameters }): Promise<AxiosResponse<{ scan_id: string; celery_task_id: string }>> =>
-    isDemoMode() ? createMockResponse({ scan_id: 'scan-new', celery_task_id: 'task-new' }) : api.post('/scans/initiate', data),
+    api.post('/scans/initiate', data),
     
   get: (scanId: string): Promise<AxiosResponse<Scan>> =>
-    isDemoMode() ? createMockResponse(mockData.scans[0]) : api.get(`/scans/${scanId}`),
+    api.get(`/scans/${scanId}`),
     
   cancel: (scanId: string): Promise<AxiosResponse> =>
-    isDemoMode() ? createMockResponse({}) : api.post(`/scans/${scanId}/cancel`),
+    api.post(`/scans/${scanId}/cancel`),
 };
 
 // Findings API
 export const findingsAPI = {
   list: (params?: { status?: string; severity?: string; scan_id?: string; search?: string }): Promise<AxiosResponse<Finding[]>> =>
-    isDemoMode() ? createMockResponse(mockData.findings) : api.get('/findings', { params }),
+    api.get('/findings', { params }),
     
   get: (findingId: string): Promise<AxiosResponse<Finding>> =>
-    isDemoMode() ? createMockResponse(mockData.findings[0]) : api.get(`/findings/${findingId}`),
+    api.get(`/findings/${findingId}`),
     
   update: (findingId: string, data: Partial<Finding>): Promise<AxiosResponse<Finding>> =>
-    isDemoMode() ? createMockResponse({ ...mockData.findings[0], ...data } as Finding) : api.put(`/findings/${findingId}`, data),
+    api.put(`/findings/${findingId}`, data),
     
   addComment: (findingId: string, comment: string): Promise<AxiosResponse> =>
-    isDemoMode() ? createMockResponse({}) : api.post(`/findings/${findingId}/comments`, { comment }),
+    api.post(`/findings/${findingId}/comments`, { comment }),
 
   getComments: (findingId: string): Promise<AxiosResponse<any[]>> =>
-    isDemoMode() ? createMockResponse([]) : api.get(`/findings/${findingId}/comments`),
+    api.get(`/findings/${findingId}/comments`),
+};
+
+// Reports API
+export const reportsAPI = {
+  get: (scanId: string): Promise<AxiosResponse<{ findings: Finding[]; attack_paths: any[] }>> =>
+    api.get(`/reports/${scanId}`),
+    
+  downloadPDF: (scanId: string): Promise<AxiosResponse<Blob>> =>
+    api.get(`/reports/${scanId}/download_pdf`, { responseType: 'blob' }),
+};
+
+// Settings API
+export const settingsAPI = {
+  get: (): Promise<AxiosResponse<Record<string, any>>> =>
+    api.get('/settings'),
+    
+  update: (data: Record<string, any>): Promise<AxiosResponse> =>
+    api.put('/settings', data),
 };
 
 // Dashboard API
@@ -331,7 +340,7 @@ export const dashboardAPI = {
     findings_by_severity: Record<string, number>;
     recent_scans: Scan[];
   }>> =>
-    isDemoMode() ? createMockResponse(mockData.dashboard) : api.get('/dashboard/summary'),
+    api.get('/dashboard/summary'),
 };
 
 export default api;
