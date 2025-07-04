@@ -10,6 +10,19 @@ import { BasicConfiguration } from "./config/BasicConfiguration";
 import { ScanModuleSelector } from "./config/ScanModuleSelector";
 import { AdvancedConfiguration } from "./config/AdvancedConfiguration";
 
+interface ScanModules {
+  enable_network_scan: boolean;
+  enable_web_application_scan: boolean;
+  enable_credentials_leak: boolean;
+  enable_database_enum_check: boolean;
+  enable_sast_scan: boolean;
+  enable_vulnerability_check: boolean;
+  enable_passive_recon: boolean;
+  enable_ssh_security_check: boolean;
+  enable_mail_server_check: boolean;
+  enable_shodan_lookup: boolean;
+}
+
 interface InitiateScanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -20,7 +33,7 @@ interface InitiateScanDialogProps {
 export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: InitiateScanDialogProps) => {
   const [scanName, setScanName] = useState("");
   const [selectedAsset, setSelectedAsset] = useState("");
-  const [scanModules, setScanModules] = useState({
+  const [scanModules, setScanModules] = useState<ScanModules>({
     enable_network_scan: true,
     enable_web_application_scan: true,
     enable_credentials_leak: false,
