@@ -10,8 +10,21 @@ import { SshSecurityConfig } from "./SshSecurityConfig";
 import { MailServerConfig } from "./MailServerConfig";
 import { ShodanLookupConfig } from "./ShodanLookupConfig";
 
+interface ScanModules {
+  enable_network_scan: boolean;
+  enable_web_application_scan: boolean;
+  enable_credentials_leak: boolean;
+  enable_database_enum_check: boolean;
+  enable_sast_scan: boolean;
+  enable_vulnerability_check: boolean;
+  enable_passive_recon: boolean;
+  enable_ssh_security_check: boolean;
+  enable_mail_server_check: boolean;
+  enable_shodan_lookup: boolean;
+}
+
 interface AdvancedConfigurationProps {
-  scanModules: Record<string, boolean>;
+  scanModules: ScanModules;
   networkParams: any;
   setNetworkParams: (params: any) => void;
   webParams: any;
