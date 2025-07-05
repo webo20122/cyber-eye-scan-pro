@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NetworkScanConfig } from "./NetworkScanConfig";
 import { WebApplicationScanConfig } from "./WebApplicationScanConfig";
@@ -134,8 +133,8 @@ export const ComprehensiveAdvancedConfiguration = ({
 
         {scanModules.enable_passive_recon && (
           <PassiveReconConfig 
-            reconParams={moduleConfigs.passive_recon || {}}
-            setReconParams={(config) => updateModuleConfig('passive_recon', config)}
+            passiveReconParams={moduleConfigs.passive_recon || {}}
+            setPassiveReconParams={(config) => updateModuleConfig('passive_recon', config)}
           />
         )}
 
