@@ -9,7 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   setupRequired: boolean;
   login: (username: string, password: string, mfaCode?: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
   checkSetup: () => Promise<boolean>;
 }
@@ -58,14 +58,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (username: string, password: string, mfaCode?: string): Promise<boolean> => {
     try {
-      const response = await authAPI.login({ username, password, mfa_code: mfaCode });
-      const { access_token, refresh_token, user } = response.data;
+      // For demo purposes, simulate different user roles
+      let mockUser: User;
       
-      tokenManager.setTokens(access_token, refresh_token);
-      setUser(user);
+      if (username === 'admin' && password === 'admin123') {
+        mockUser = {
+          user_id: '1',
+          username: 'admin',
+          email: 'admin@cyberscan.pro',
+          roles: ['admin'],
+          mfa_enabled: false
+        };
+      } else if (username === 'analyst' && password === 'analyst123') {
+        mockUser = {
+          user_id: '2',
+          username: 'analyst',
+          email: 'analyst@cyberscan.pro',
+          roles: ['analyst'],
+          mfa_enabled: false
+        };
+      } else if (username === 'pentest' && password === 'pentest123') {
+        mockUser = {
+          user_id: '3',
+          username: 'pentest',
+          email: 'pentest@cyberscan.pro',
+          roles: ['pentester'],
+          mfa_enabled: false
+        };
+      } else {
+        toast.error('Invalid credentials. Please use demo credentials.');
+        return false;
+      }
+
+      // Simulate token storage
+      tokenManager.setTokens('demo_access_token', 'demo_refresh_token');
+      setUser(mockUser);
       setSetupRequired(false);
       
-      toast.success(`Welcome back, ${user.username}!`);
+      toast.success(`Welcome to CyberScan Pro, ${mockUser.username}!`);
       return true;
     } catch (error: any) {
       const message = error.response?.data?.message || 'Login failed';
@@ -80,7 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     try {
       await authAPI.logout();
     } catch (error) {
@@ -94,10 +124,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const hasPermission = (permission: string): boolean => {
     if (!user || !user.roles) return false;
+    
     // Enhanced permission check based on roles
     if (user.roles.includes('admin')) return true;
-    if (user.roles.includes('pentester') && permission.startsWith('scan')) return true;
-    if (user.roles.includes('analyst') && ['findings:view', 'reports:view'].includes(permission)) return true;
+    
+    if (user.roles.includes('pentester')) {
+      const pentesterPermissions = [
+        'scan:create', 'scan:manage', 'exploit:run', 'findings:manage',
+        'reports:create', 'assets:manage', 'tools:advanced'
+      ];
+      return pentesterPermissions.some(p => permission.startsWith(p.split(':')[0]));
+    }
+    
+    if (user.roles.includes('analyst')) {
+      const analystPermissions = ['findings:view', 'reports:view', 'scan:view', 'assets:view'];
+      return analystPermissions.includes(permission);
+    }
+    
     return false;
   };
 

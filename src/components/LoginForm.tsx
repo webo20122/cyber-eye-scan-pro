@@ -44,6 +44,10 @@ export const LoginForm = () => {
     }
   };
 
+  const fillDemoCredentials = (username: string, password: string) => {
+    setFormData({ ...formData, username, password });
+  };
+
   return (
     <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm border-gray-200 shadow-xl">
       <CardHeader className="text-center">
@@ -52,12 +56,12 @@ export const LoginForm = () => {
             <Shield className="h-6 w-6 text-white" />
           </div>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-900 to-purple-700 bg-clip-text text-transparent">
-            CyberScan
+            CyberScan Pro
           </h1>
         </div>
-        <CardTitle className="text-xl font-bold">Security Platform Login</CardTitle>
+        <CardTitle className="text-xl font-bold">Enterprise Security Platform</CardTitle>
         <CardDescription>
-          Access your cybersecurity dashboard
+          Advanced penetration testing and vulnerability assessment suite
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -129,7 +133,7 @@ export const LoginForm = () => {
             {isLoading ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Signing in...
+                Authenticating...
               </div>
             ) : (
               "Sign In"
@@ -139,10 +143,38 @@ export const LoginForm = () => {
 
         <div className="mt-6 pt-4 border-t border-gray-200">
           <div className="text-sm text-gray-600 text-center">
-            <p className="font-medium mb-2">Demo Access</p>
-            <div className="bg-blue-50 p-3 rounded-lg space-y-1 text-xs">
-              <div>Admin: <code className="bg-white px-1 rounded">admin@cyberscan.com</code> / <code className="bg-white px-1 rounded">admin123</code></div>
-              <div>Analyst: <code className="bg-white px-1 rounded">user@cyberscan.com</code> / <code className="bg-white px-1 rounded">user123</code></div>
+            <p className="font-medium mb-3">Demo Access - Click to Fill</p>
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => fillDemoCredentials('admin', 'admin123')}
+              >
+                <Shield className="h-3 w-3 mr-1" />
+                Administrator Access
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => fillDemoCredentials('analyst', 'analyst123')}
+              >
+                <Eye className="h-3 w-3 mr-1" />
+                Security Analyst Access
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => fillDemoCredentials('pentest', 'pentest123')}
+              >
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Penetration Tester Access
+              </Button>
             </div>
           </div>
         </div>
