@@ -15,7 +15,7 @@ export const DemoCredentials = ({ onFillCredentials }: DemoCredentialsProps) => 
       password: "admin123",
       icon: Shield,
       description: "Full system access with all permissions",
-      color: "bg-red-50 border-red-200 text-red-800"
+      color: "bg-red-50 border-red-200 hover:bg-red-100"
     },
     {
       role: "Security Analyst",
@@ -23,7 +23,7 @@ export const DemoCredentials = ({ onFillCredentials }: DemoCredentialsProps) => 
       password: "analyst123",
       icon: Search,
       description: "View scans, findings, and generate reports",
-      color: "bg-blue-50 border-blue-200 text-blue-800"
+      color: "bg-blue-50 border-blue-200 hover:bg-blue-100"
     },
     {
       role: "Penetration Tester",
@@ -31,38 +31,38 @@ export const DemoCredentials = ({ onFillCredentials }: DemoCredentialsProps) => 
       password: "pentest123",
       icon: User,
       description: "Create and execute security scans",
-      color: "bg-purple-50 border-purple-200 text-purple-800"
+      color: "bg-purple-50 border-purple-200 hover:bg-purple-100"
     }
   ];
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="text-lg">Demo Accounts</CardTitle>
-        <CardDescription>
-          Click any account below to auto-fill the login form with demo credentials
+    <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold text-gray-800">Demo Accounts</CardTitle>
+        <CardDescription className="text-gray-600">
+          Click any account below to auto-fill the login form
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-3">
           {credentials.map((cred, index) => {
             const Icon = cred.icon;
             return (
               <Button
                 key={index}
                 variant="outline"
-                className={`h-auto p-4 text-left flex flex-col items-start gap-3 ${cred.color} hover:opacity-80`}
+                className={`h-auto p-4 text-left flex items-center gap-4 ${cred.color} border-2 transition-all duration-200`}
                 onClick={() => onFillCredentials(cred.username, cred.password)}
               >
-                <div className="flex items-center gap-2 w-full">
-                  <Icon className="h-5 w-5" />
-                  <span className="font-semibold">{cred.role}</span>
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/80">
+                  <Icon className="h-5 w-5 text-gray-700" />
                 </div>
-                <div className="text-sm space-y-1 w-full">
-                  <div className="font-mono bg-white/50 px-2 py-1 rounded text-xs">
+                <div className="flex-1 text-left">
+                  <div className="font-semibold text-gray-800 mb-1">{cred.role}</div>
+                  <div className="text-xs font-mono bg-white/60 px-2 py-1 rounded mb-1">
                     {cred.username} / {cred.password}
                   </div>
-                  <div className="text-xs opacity-80">{cred.description}</div>
+                  <div className="text-xs text-gray-600">{cred.description}</div>
                 </div>
               </Button>
             );

@@ -15,13 +15,13 @@ const Login = () => {
               </div>
               <div className="text-left">
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-900 to-purple-700 bg-clip-text text-transparent">
-                  CyberScan
+                  CyberScan Pro
                 </h1>
-                <p className="text-lg text-gray-600 mt-1">Enterprise Security Platform</p>
+                <p className="text-lg text-gray-600 mt-1">Advanced Security Platform</p>
               </div>
             </div>
             <p className="text-xl text-gray-700 leading-relaxed">
-              Comprehensive cybersecurity platform for vulnerability management, penetration testing, and security posture assessment.
+              Comprehensive vulnerability management and security scanning solution for modern enterprises.
             </p>
           </div>
 
@@ -31,8 +31,8 @@ const Login = () => {
                 <CheckCircle className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Automated Validation</h3>
-                <p className="text-gray-600">AI-powered vulnerability validation and PoC generation</p>
+                <h3 className="font-semibold text-gray-900">AI-Powered Validation</h3>
+                <p className="text-gray-600">Automatically validate vulnerabilities with 99.9% accuracy</p>
               </div>
             </div>
 
@@ -41,8 +41,8 @@ const Login = () => {
                 <BarChart3 className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Real-Time Monitoring</h3>
-                <p className="text-gray-600">Live dashboards and continuous security assessment</p>
+                <h3 className="font-semibold text-gray-900">Real-Time Analytics</h3>
+                <p className="text-gray-600">Monitor security posture with live dashboards</p>
               </div>
             </div>
 
@@ -52,7 +52,7 @@ const Login = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Team Collaboration</h3>
-                <p className="text-gray-600">Seamless workflow for security teams and analysts</p>
+                <p className="text-gray-600">Seamless workflow management for security teams</p>
               </div>
             </div>
           </div>

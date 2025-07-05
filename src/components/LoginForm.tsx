@@ -19,8 +19,10 @@ export const LoginForm = () => {
     setIsLoading(true);
 
     try {
-      await login(username, password);
-      toast.success("Login successful!");
+      const success = await login(username, password);
+      if (success) {
+        toast.success("Login successful!");
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Login failed");
     } finally {
@@ -38,40 +40,44 @@ export const LoginForm = () => {
     <div className="w-full max-w-md space-y-6">
       <DemoCredentials onFillCredentials={handleFillCredentials} />
       
-      <Card>
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">Sign In</CardTitle>
-          <CardDescription className="text-center">
-            Enter your credentials to access the platform
+      <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Welcome Back
+          </CardTitle>
+          <CardDescription className="text-gray-600">
+            Sign in to access your CyberScan Pro dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username" className="text-gray-700 font-medium">Username</Label>
               <Input
                 id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
+                className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-gray-700 font-medium">Password</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
+                className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 required
               />
             </div>
             <Button
               type="submit"
-              className="w-full"
+              className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium"
               disabled={isLoading}
             >
               {isLoading ? "Signing in..." : "Sign In"}

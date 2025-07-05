@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authAPI, tokenManager, checkInitialSetup } from '@/services/api';
 import { User } from '@/services/auth.api';
@@ -57,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (username: string, password: string, mfaCode?: string): Promise<boolean> => {
     try {
-      // Demo credentials - replace with actual API call to your Flask backend
+      // Demo credentials validation
       let mockUser: User;
       
       if (username === 'admin' && password === 'admin123') {
@@ -85,11 +86,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           mfa_enabled: false
         };
       } else {
-        toast.error('Invalid credentials. Use: admin/admin123, analyst/analyst123, or pentester/pentest123');
+        toast.error('Invalid credentials. Use demo accounts: admin/admin123, analyst/analyst123, or pentester/pentest123');
         return false;
       }
 
-      // Store demo tokens - replace with actual tokens from Flask backend
+      // Store demo tokens
       tokenManager.setTokens('demo_access_token', 'demo_refresh_token');
       setUser(mockUser);
       setSetupRequired(false);
