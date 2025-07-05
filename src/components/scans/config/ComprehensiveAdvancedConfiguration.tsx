@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NetworkScanConfig } from "./NetworkScanConfig";
 import { WebApplicationScanConfig } from "./WebApplicationScanConfig";
@@ -8,7 +9,6 @@ import { VulnerabilityCheckAdvancedConfig } from "./VulnerabilityCheckAdvancedCo
 import { ActiveDirectoryAdvancedConfig } from "./ActiveDirectoryAdvancedConfig";
 import { SastScanConfig } from "./SastScanConfig";
 import { PassiveReconConfig } from "./PassiveReconConfig";
-import { useState } from "react";
 
 interface ScanModules {
   enable_network_scan: boolean;
@@ -127,15 +127,15 @@ export const ComprehensiveAdvancedConfiguration = ({
 
         {scanModules.enable_sast_scan && (
           <SastScanConfig 
-            config={moduleConfigs.sast_scan || {}}
-            onChange={(config) => updateModuleConfig('sast_scan', config)}
+            sastParams={moduleConfigs.sast_scan || {}}
+            setSastParams={(config) => updateModuleConfig('sast_scan', config)}
           />
         )}
 
         {scanModules.enable_passive_recon && (
           <PassiveReconConfig 
-            config={moduleConfigs.passive_recon || {}}
-            onChange={(config) => updateModuleConfig('passive_recon', config)}
+            reconParams={moduleConfigs.passive_recon || {}}
+            setReconParams={(config) => updateModuleConfig('passive_recon', config)}
           />
         )}
 

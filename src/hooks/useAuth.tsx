@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authAPI, tokenManager, checkInitialSetup } from '@/services/api';
 import { User } from '@/services/auth.api';
@@ -58,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (username: string, password: string, mfaCode?: string): Promise<boolean> => {
     try {
-      // For demo purposes, simulate different user roles
+      // Demo credentials - replace with actual API call to your Flask backend
       let mockUser: User;
       
       if (username === 'admin' && password === 'admin123') {
@@ -77,20 +76,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           roles: ['analyst'],
           mfa_enabled: false
         };
-      } else if (username === 'pentest' && password === 'pentest123') {
+      } else if (username === 'pentester' && password === 'pentest123') {
         mockUser = {
           user_id: '3',
-          username: 'pentest',
-          email: 'pentest@cyberscan.pro',
+          username: 'pentester',
+          email: 'pentester@cyberscan.pro',
           roles: ['pentester'],
           mfa_enabled: false
         };
       } else {
-        toast.error('Invalid credentials. Please use demo credentials.');
+        toast.error('Invalid credentials. Use: admin/admin123, analyst/analyst123, or pentester/pentest123');
         return false;
       }
 
-      // Simulate token storage
+      // Store demo tokens - replace with actual tokens from Flask backend
       tokenManager.setTokens('demo_access_token', 'demo_refresh_token');
       setUser(mockUser);
       setSetupRequired(false);
@@ -100,12 +99,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       const message = error.response?.data?.message || 'Login failed';
       toast.error(message);
-      
-      // Re-throw for MFA handling in LoginForm
-      if (error.response?.status === 401 && message.toLowerCase().includes('mfa')) {
-        throw error;
-      }
-      
       return false;
     }
   };

@@ -2,6 +2,7 @@
 import axios, { AxiosResponse } from 'axios';
 
 // API Configuration with environment variable support
+// For local Flask backend integration, update this URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 // Create axios instance
