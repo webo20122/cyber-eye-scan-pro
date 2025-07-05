@@ -1,6 +1,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authAPI, tokenManager, User, checkInitialSetup } from '@/services/api';
+import { authAPI, tokenManager, checkInitialSetup } from '@/services/api';
+import { User } from '@/services/auth.api';
 import { toast } from 'sonner';
 
 interface AuthContextType {
