@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { 
   Wifi, Globe, Code, Database, Key, Shield, Search, Server, Mail, Eye, Users, Zap, Activity, Route,
   Terminal, Lock, Bug, Crosshair, FileSearch, Network, Cloud, Smartphone, HardDrive, Cpu,
-  MessageSquare, Fingerprint, AlertOctagon, Radar, Layers, Settings, MonitorSpeaker
+  MessageSquare, Fingerprint, AlertOctagon, Radar, Layers, Settings, MonitorSpeaker, Braces
 } from "lucide-react";
 
 interface ScanModules {
@@ -38,7 +38,7 @@ interface ScanModules {
   enable_adaptive_attack_path_mapping: boolean;
   enable_automated_vulnerability_validation: boolean;
   
-  // New Advanced Pentest Modules
+  // New Advanced Modules
   enable_social_engineering: boolean;
   enable_physical_security: boolean;
   enable_mobile_app_scan: boolean;
@@ -71,8 +71,8 @@ export const ScanModuleSelector = ({ scanModules, setScanModules }: ScanModuleSe
   ];
 
   const infrastructureModules = [
-    { key: 'enable_credentials_leak' as keyof ScanModules, label: 'Credential Intelligence', icon: Key, description: 'Leaked credentials detection and breach monitoring', isMvp: false },
-    { key: 'enable_database_enum_check' as keyof ScanModules, label: 'Database Security Assessment', icon: Database, description: 'Database service enumeration and security testing', isMvp: false },
+    { key: 'enable_credentials_leak' as keyof ScanModules, label: 'Credential Intelligence', icon: Key, description: 'HaveIBeenPwned integration and breach monitoring', isMvp: true },
+    { key: 'enable_database_enum_check' as keyof ScanModules, label: 'Database Security Assessment', icon: Database, description: 'Database service enumeration and security testing', isMvp: true },
     { key: 'enable_snmp_enum' as keyof ScanModules, label: 'SNMP Enumeration', icon: Server, description: 'Network device SNMP enumeration and configuration assessment', isMvp: false },
     { key: 'enable_ssh_security_check' as keyof ScanModules, label: 'SSH Security Analysis', icon: Terminal, description: 'SSH configuration assessment and key management audit', isMvp: false },
     { key: 'enable_mail_server_check' as keyof ScanModules, label: 'Email Security Assessment', icon: Mail, description: 'Mail server security testing and configuration analysis', isMvp: false },
@@ -87,8 +87,8 @@ export const ScanModuleSelector = ({ scanModules, setScanModules }: ScanModuleSe
   ];
 
   const applicationModules = [
-    { key: 'enable_sast_scan' as keyof ScanModules, label: 'Static Code Analysis', icon: Code, description: 'Source code security analysis and vulnerability detection', isMvp: false },
-    { key: 'enable_api_scan' as keyof ScanModules, label: 'API Security Testing', icon: Settings, description: 'REST/GraphQL API security assessment and OWASP API Top 10', isMvp: false },
+    { key: 'enable_sast_scan' as keyof ScanModules, label: 'Static Code Analysis', icon: Code, description: 'Source code security analysis and vulnerability detection', isMvp: true },
+    { key: 'enable_api_scan' as keyof ScanModules, label: 'API Security Testing', icon: Braces, description: 'REST/GraphQL API security assessment and OWASP API Top 10', isMvp: true },
     { key: 'enable_desktop_pe_analysis' as keyof ScanModules, label: 'Binary Analysis & Reverse Engineering', icon: FileSearch, description: 'PE file analysis, malware detection, and binary security assessment', isMvp: false },
     { key: 'enable_mobile_app_scan' as keyof ScanModules, label: 'Mobile Application Security', icon: Smartphone, description: 'Android/iOS app security testing and OWASP Mobile Top 10', isMvp: false },
     { key: 'enable_web_crawling' as keyof ScanModules, label: 'Advanced Web Crawling', icon: Bug, description: 'Deep web application discovery and content enumeration', isMvp: false },

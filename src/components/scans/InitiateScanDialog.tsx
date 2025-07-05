@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Zap, Shield } from "lucide-react";
 import { BasicConfiguration } from "./config/BasicConfiguration";
 import { ScanModuleSelector } from "./config/ScanModuleSelector";
-import { AdvancedConfiguration } from "./config/AdvancedConfiguration";
+import { ComprehensiveAdvancedConfiguration } from "./config/ComprehensiveAdvancedConfiguration";
 
 interface ScanModules {
   // Core Security Modules
@@ -118,63 +118,7 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
     enable_compliance_check: false
   });
 
-  // Core module parameters
-  const [networkParams, setNetworkParams] = useState({
-    nmap_args: "-sS -sV -O --script=default,vuln",
-    ports: "1-65535",
-    enable_os_detection: true,
-    enable_service_version_detection: true,
-    enable_script_scanning: true,
-    enable_cve_lookup: true,
-    scan_techniques: ["SYN", "TCP", "UDP"],
-    timing_template: "T4",
-    host_discovery: true,
-    stealth_mode: false
-  });
-
-  const [webParams, setWebParams] = useState({
-    enable_zap_scan: true,
-    zap_address: "http://localhost:8080",
-    enable_zap_auth: false,
-    web_login_url: "",
-    web_username: "",
-    web_password: "",
-    enable_nikto_scan: true,
-    enable_gobuster_scan: true,
-    gobuster_wordlist_path: "/usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt",
-    enable_custom_payloads: false,
-    spider_depth: 5,
-    passive_scan_only: false,
-    enable_ajax_spider: true
-  });
-
-  const [vulnParams, setVulnParams] = useState({
-    target_software_name: "",
-    target_cve_id: "",
-    enable_vulners_lookup: true,
-    enable_nvd_lookup: true,
-    enable_vendor_advisories: true,
-    enable_nessus_integration: false,
-    enable_qualys_integration: false,
-    enable_exploit_db_lookup: true,
-    severity_threshold: "Medium",
-    enable_zero_day_detection: false
-  });
-
-  const [adParams, setAdParams] = useState({
-    ldap_host: "",
-    ldap_port: 636,
-    ldap_use_tls: true,
-    ldap_username: "",
-    ldap_password: "",
-    ldap_base_dn: "",
-    enable_user_enum: true,
-    enable_group_enum: true,
-    enable_computer_enum: true,
-    enable_password_policy_check: true,
-    enable_privilege_escalation_check: true,
-    enable_bloodhound_analysis: false
-  });
+  const [moduleConfigs, setModuleConfigs] = useState<Record<string, any>>({});
 
   const initiateScanMutation = useMutation({
     mutationFn: (data: any) => scansAPI.initiate(data),
@@ -230,20 +174,7 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
       enable_physical_security: false,
       enable_compliance_check: false
     });
-    // Reset all parameters to defaults
-    setNetworkParams({
-      nmap_args: "-sS -sV -O --script=default,vuln",
-      ports: "1-65535",
-      enable_os_detection: true,
-      enable_service_version_detection: true,
-      enable_script_scanning: true,
-      enable_cve_lookup: true,
-      scan_techniques: ["SYN", "TCP", "UDP"],
-      timing_template: "T4",
-      host_discovery: true,
-      stealth_mode: false
-    });
-    // ... reset other params similarly
+    setModuleConfigs({});
   };
 
   const buildScanParameters = () => {
@@ -262,22 +193,12 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
       scanParameters[key] = enabled;
     });
 
-    // Add core module parameters only if modules are enabled
-    if (scanModules.enable_network_scan) {
-      scanParameters.network_scan_params = networkParams;
-    }
-
-    if (scanModules.enable_web_application_scan) {
-      scanParameters.web_application_scan_params = webParams;
-    }
-
-    if (scanModules.enable_vulnerability_check) {
-      scanParameters.vulnerability_check_params = vulnParams;
-    }
-
-    if (scanModules.enable_active_directory_enumeration && adParams.ldap_host && adParams.ldap_base_dn) {
-      scanParameters.active_directory_enumeration_params = adParams;
-    }
+    // Add module-specific configurations
+    Object.entries(moduleConfigs).forEach(([moduleName, config]) => {
+      if (Object.keys(config).length > 0) {
+        scanParameters[`${moduleName}_params`] = config;
+      }
+    });
 
     return scanParameters;
   };
@@ -286,14 +207,6 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
     if (!scanName || !selectedAsset) {
       toast.error("Please fill in all required fields");
       return;
-    }
-
-    // Validate Active Directory parameters if enabled
-    if (scanModules.enable_active_directory_enumeration) {
-      if (!adParams.ldap_host || !adParams.ldap_base_dn) {
-        toast.error("LDAP Host and Base DN are required for Active Directory enumeration");
-        return;
-      }
     }
 
     const scanParameters = buildScanParameters();
@@ -320,8 +233,25 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
       }
     },
     {
-      name: "Comprehensive Pentest",
-      description: "Full-spectrum penetration testing engagement",
+      name: "Full Enterprise Assessment",
+      description: "Comprehensive enterprise security evaluation",
+      modules: {
+        enable_network_scan: true,
+        enable_web_application_scan: true,
+        enable_vulnerability_check: true,
+        enable_active_directory_enumeration: true,
+        enable_credentials_leak: true,
+        enable_database_enum_check: true,
+        enable_sast_scan: true,
+        enable_api_scan: true,
+        enable_passive_recon: true,
+        enable_dns_enumeration: true,
+        enable_ssl_tls_analysis: true
+      }
+    },
+    {
+      name: "Advanced Red Team Exercise",
+      description: "Full-spectrum adversarial simulation",
       modules: {
         enable_network_scan: true,
         enable_web_application_scan: true,
@@ -331,27 +261,14 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
         enable_database_enum_check: true,
         enable_exploitation: true,
         enable_bruteforce: true,
-        enable_passive_recon: true,
-        enable_adaptive_attack_path_mapping: true
-      }
-    },
-    {
-      name: "Red Team Exercise",
-      description: "Advanced adversarial simulation and attack path analysis",
-      modules: {
-        enable_network_scan: true,
-        enable_web_application_scan: true,
-        enable_vulnerability_check: true,
-        enable_active_directory_enumeration: true,
-        enable_credentials_leak: true,
-        enable_exploitation: true,
-        enable_bruteforce: true,
         enable_social_engineering: true,
         enable_physical_security: true,
         enable_adaptive_attack_path_mapping: true,
         enable_automated_vulnerability_validation: true,
         enable_osint_gathering: true,
-        enable_threat_intelligence: true
+        enable_threat_intelligence: true,
+        enable_wireless_scan: true,
+        enable_cloud_security_scan: true
       }
     }
   ];
@@ -421,16 +338,10 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
             setScanModules={setScanModules}
           />
 
-          <AdvancedConfiguration
+          <ComprehensiveAdvancedConfiguration
             scanModules={scanModules}
-            networkParams={networkParams}
-            setNetworkParams={setNetworkParams}
-            webParams={webParams}
-            setWebParams={setWebParams}
-            vulnParams={vulnParams}
-            setVulnParams={setVulnParams}
-            adParams={adParams}
-            setAdParams={setAdParams}
+            moduleConfigs={moduleConfigs}
+            setModuleConfigs={setModuleConfigs}
           />
         </div>
 

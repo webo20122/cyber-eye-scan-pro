@@ -1,57 +1,89 @@
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Key } from "lucide-react";
 
 interface CredentialsLeakConfigProps {
-  credentialsParams: {
-    check_common_passwords: boolean;
-    check_leaked_databases: boolean;
-    custom_wordlist: string;
-  };
-  setCredentialsParams: (params: any) => void;
+  config: any;
+  onChange: (config: any) => void;
 }
 
-export const CredentialsLeakConfig = ({ credentialsParams, setCredentialsParams }: CredentialsLeakConfigProps) => {
+export const CredentialsLeakConfig = ({ config, onChange }: CredentialsLeakConfigProps) => {
+  const updateConfig = (key: string, value: any) => {
+    onChange({ ...config, [key]: value });
+  };
+
   return (
-    <div>
-      <h4 className="font-medium mb-3 flex items-center gap-2">
-        <Key className="h-4 w-4" />
-        Credentials Leak Check Parameters
-      </h4>
-      <div className="space-y-3">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="commonPasswords"
-            checked={credentialsParams.check_common_passwords}
-            onCheckedChange={(checked) =>
-              setCredentialsParams(prev => ({ ...prev, check_common_passwords: !!checked }))
-            }
-          />
-          <Label htmlFor="commonPasswords">Check Common Passwords</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="leakedDatabases"
-            checked={credentialsParams.check_leaked_databases}
-            onCheckedChange={(checked) =>
-              setCredentialsParams(prev => ({ ...prev, check_leaked_databases: !!checked }))
-            }
-          />
-          <Label htmlFor="leakedDatabases">Check Leaked Databases</Label>
-        </div>
+    <Card className="border-red-200 bg-red-50">
+      <CardHeader>
+        <CardTitle className="text-sm font-medium">Credentials Leak Check Configuration</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
         <div>
-          <Label htmlFor="customWordlist">Custom Wordlist</Label>
-          <Textarea
-            id="customWordlist"
-            value={credentialsParams.custom_wordlist}
-            onChange={(e) => setCredentialsParams(prev => ({ ...prev, custom_wordlist: e.target.value }))}
-            placeholder="Enter custom passwords/usernames (one per line)"
-            rows={3}
+          <Label htmlFor="check_type">Check Type</Label>
+          <Select value={config.check_type || "email"} onValueChange={(value) => updateConfig('check_type', value)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="email">Email Address</SelectItem>
+              <SelectItem value="domain">Domain</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="target_value">
+            {config.check_type === 'domain' ? 'Domain' : 'Email Address'}
+          </Label>
+          <Input
+            id="target_value"
+            value={config.target_value || ""}
+            onChange={(e) => updateConfig('target_value', e.target.value)}
+            placeholder={config.check_type === 'domain' ? 'example.com' : 'user@example.com'}
           />
         </div>
-      </div>
-    </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="check_haveibeenpwned"
+              checked={config.check_haveibeenpwned ?? true}
+              onCheckedChange={(checked) => updateConfig('check_haveibeenpwned', !!checked)}
+            />
+            <Label htmlFor="check_haveibeenpwned">HaveIBeenPwned</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="check_dehashed"
+              checked={config.check_dehashed ?? false}
+              onCheckedChange={(checked) => updateConfig('check_dehashed', !!checked)}
+            />
+            <Label htmlFor="check_dehashed">DeHashed</Label>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="check_breach_databases"
+              checked={config.check_breach_databases ?? true}
+              onCheckedChange={(checked) => updateConfig('check_breach_databases', !!checked)}
+            />
+            <Label htmlFor="check_breach_databases">Breach Databases</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="enable_dark_web_monitoring"
+              checked={config.enable_dark_web_monitoring ?? false}
+              onCheckedChange={(checked) => updateConfig('enable_dark_web_monitoring', !!checked)}
+            />
+            <Label htmlFor="enable_dark_web_monitoring">Dark Web Monitoring</Label>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
