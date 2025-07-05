@@ -31,6 +31,20 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+interface DashboardData {
+  total_scans: number;
+  scans_by_status: Record<string, number>;
+  total_findings: number;
+  findings_by_severity: Record<string, number>;
+  recent_scans: {
+    scan_id: string;
+    name: string;
+    status: string;
+    created_at: string;
+    asset_id: string;
+  }[];
+}
+
 const Index = () => {
   const navigate = useNavigate();
   const { user, logout, hasPermission } = useAuth();
@@ -48,7 +62,19 @@ const Index = () => {
 
   if (!user) return null;
 
-  const stats = dashboardData?.data || {
+  const stats: DashboardData = dashboardData?.data ? {
+    total_scans: dashboardData.data.total_scans,
+    scans_by_status: dashboardData.data.scans_by_status,
+    total_findings: dashboardData.data.total_findings,
+    findings_by_severity: dashboardData.data.findings_by_severity,
+    recent_scans: dashboardData.data.recent_scans.map((scan: any) => ({
+      scan_id: scan.scan_id,
+      name: scan.scan_name,
+      status: scan.status,
+      created_at: scan.created_at,
+      asset_id: scan.asset_id
+    }))
+  } : {
     total_scans: 0,
     scans_by_status: {},
     total_findings: 0,

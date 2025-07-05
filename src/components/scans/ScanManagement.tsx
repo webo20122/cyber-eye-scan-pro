@@ -129,20 +129,20 @@ export const ScanManagement = () => {
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             {getStatusIcon(scan.status)}
-                            <h3 className="font-semibold text-lg">{scan.name}</h3>
+                            <h3 className="font-semibold text-lg">{scan.scan_name}</h3>
                             <Badge className={getStatusColor(scan.status)}>
                               {scan.status}
                             </Badge>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                             <div>
-                              <span className="font-medium">Target:</span> {asset?.name || 'Unknown Asset'}
+                              <span className="font-medium">Target:</span> {asset?.asset_name || 'Unknown Asset'}
                             </div>
                             <div>
                               <span className="font-medium">Started:</span> {new Date(scan.created_at).toLocaleString()}
                             </div>
                             <div>
-                              <span className="font-medium">Progress:</span> {scan.progress}%
+                              <span className="font-medium">Progress:</span> {scan.progress || 0}%
                             </div>
                           </div>
                           {scan.status === 'running' && (
@@ -150,7 +150,7 @@ export const ScanManagement = () => {
                               <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div 
                                   className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                                  style={{ width: `${scan.progress}%` }}
+                                  style={{ width: `${scan.progress || 0}%` }}
                                 ></div>
                               </div>
                             </div>

@@ -30,7 +30,7 @@ export const ScanDetailsDialog = ({ scanId, open, onOpenChange }: ScanDetailsDia
     queryKey: ['scan', scanId],
     queryFn: () => scansAPI.get(scanId),
     enabled: open && !!scanId,
-    refetchInterval: scan => scan?.data?.status === 'running' ? 5000 : false
+    refetchInterval: (query) => query.state.data?.data?.status === 'running' ? 5000 : false
   });
 
   if (isLoading || !scanData?.data) {

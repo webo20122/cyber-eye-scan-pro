@@ -95,7 +95,7 @@ export const FindingDetailsDialog = ({ findingId, open, onOpenChange }: FindingD
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            {finding.name}
+            {finding.finding_name}
           </DialogTitle>
           <DialogDescription>
             Detailed vulnerability information and remediation guidance

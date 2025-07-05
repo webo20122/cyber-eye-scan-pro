@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -20,9 +19,9 @@ interface EditAssetDialogProps {
 
 export const EditAssetDialog = ({ assetId, open, onOpenChange, onSuccess }: EditAssetDialogProps) => {
   const [formData, setFormData] = useState({
-    name: "",
-    type: "",
-    value: "",
+    asset_name: "",
+    asset_type: "",
+    target_value: "",
     description: "",
     tags: ""
   });
@@ -48,9 +47,9 @@ export const EditAssetDialog = ({ assetId, open, onOpenChange, onSuccess }: Edit
     if (assetData?.data) {
       const asset = assetData.data;
       setFormData({
-        name: asset.name || "",
-        type: asset.type || "",
-        value: asset.value || "",
+        asset_name: asset.asset_name || "",
+        asset_type: asset.asset_type || "",
+        target_value: asset.target_value || "",
         description: asset.description || "",
         tags: asset.tags ? asset.tags.join(', ') : ""
       });
@@ -58,7 +57,7 @@ export const EditAssetDialog = ({ assetId, open, onOpenChange, onSuccess }: Edit
   }, [assetData]);
 
   const handleSubmit = () => {
-    if (!formData.name || !formData.type || !formData.value) {
+    if (!formData.asset_name || !formData.asset_type || !formData.target_value) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -80,7 +79,7 @@ export const EditAssetDialog = ({ assetId, open, onOpenChange, onSuccess }: Edit
     { value: 'NetworkSegment', label: 'Network Segment', placeholder: '192.168.1.0/24' }
   ];
 
-  const selectedType = assetTypes.find(type => type.value === formData.type);
+  const selectedType = assetTypes.find(type => type.value === formData.asset_type);
 
   if (isLoading) {
     return (
@@ -114,15 +113,15 @@ export const EditAssetDialog = ({ assetId, open, onOpenChange, onSuccess }: Edit
             <Label htmlFor="name">Asset Name *</Label>
             <Input
               id="name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              value={formData.asset_name}
+              onChange={(e) => setFormData(prev => ({ ...prev, asset_name: e.target.value }))}
               placeholder="Enter a descriptive name"
             />
           </div>
 
           <div>
             <Label htmlFor="type">Asset Type *</Label>
-            <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
+            <Select value={formData.asset_type} onValueChange={(value) => setFormData(prev => ({ ...prev, asset_type: value }))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select asset type" />
               </SelectTrigger>
@@ -140,8 +139,8 @@ export const EditAssetDialog = ({ assetId, open, onOpenChange, onSuccess }: Edit
             <Label htmlFor="value">Target Value *</Label>
             <Input
               id="value"
-              value={formData.value}
-              onChange={(e) => setFormData(prev => ({ ...prev, value: e.target.value }))}
+              value={formData.target_value}
+              onChange={(e) => setFormData(prev => ({ ...prev, target_value: e.target.value }))}
               placeholder={selectedType?.placeholder || "Enter target value"}
             />
           </div>

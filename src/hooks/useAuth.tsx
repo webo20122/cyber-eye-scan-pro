@@ -10,7 +10,7 @@ interface AuthContextType {
   login: (username: string, password: string, mfaCode?: string) => Promise<boolean>;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
-  checkSetup: () => Promise<void>;
+  checkSetup: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [setupRequired, setSetupRequired] = useState(false);
 
-  const checkSetup = async () => {
+  const checkSetup = async (): Promise<boolean> => {
     try {
       const setupComplete = await checkInitialSetup();
       setSetupRequired(!setupComplete);
