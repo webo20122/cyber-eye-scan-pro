@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Shield, LogOut, Settings, User, Zap } from "lucide-react";
+import { Shield, LogOut, Settings, User, Zap, Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 export const AppHeader = () => {
@@ -75,6 +75,11 @@ export const AppHeader = () => {
                 Admin Panel
               </Button>
             )}
+            
+            <Button variant="outline" onClick={() => navigate("/network-discovery")} className="border-green-200 hover:bg-green-50">
+              <Search className="h-4 w-4 mr-2" />
+              Network Discovery
+            </Button>
             
             <Button variant="outline" onClick={handleLogout} className="border-red-200 hover:bg-red-50 hover:text-red-700">
               <LogOut className="h-4 w-4 mr-2" />

@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import InitialSetup from "./pages/InitialSetup";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import NetworkDiscovery from "./pages/NetworkDiscovery";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/admin" element={<Admin />} />
+      <Route path="/network-discovery" element={<NetworkDiscovery />} />
       <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="/initial-setup" element={<Navigate to="/" replace />} />
       <Route path="*" element={<NotFound />} />

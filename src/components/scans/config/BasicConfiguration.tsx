@@ -43,7 +43,7 @@ export const BasicConfiguration = ({
             <SelectContent>
               {assets.map((asset) => (
                 <SelectItem key={asset.asset_id} value={asset.asset_id}>
-                  {asset.name} ({asset.type}: {asset.value})
+                  {asset.name} ({asset.asset_type}: {asset.target_value})
                 </SelectItem>
               ))}
             </SelectContent>

@@ -8,6 +8,10 @@ import { VulnerabilityCheckAdvancedConfig } from "./VulnerabilityCheckAdvancedCo
 import { ActiveDirectoryAdvancedConfig } from "./ActiveDirectoryAdvancedConfig";
 import { SastScanConfig } from "./SastScanConfig";
 import { PassiveReconConfig } from "./PassiveReconConfig";
+import { ThreatIntelligenceConfig } from "./ThreatIntelligenceConfig";
+import { SocialEngineeringConfig } from "./SocialEngineeringConfig";
+import { MalwareAnalysisConfig } from "./MalwareAnalysisConfig";
+import { ComplianceCheckConfig } from "./ComplianceCheckConfig";
 
 interface ScanModules {
   enable_network_scan: boolean;
@@ -138,11 +142,54 @@ export const ComprehensiveAdvancedConfiguration = ({
           />
         )}
 
+        {scanModules.enable_threat_intelligence && (
+          <ThreatIntelligenceConfig 
+            config={moduleConfigs.threat_intelligence || {}}
+            onChange={(config) => updateModuleConfig('threat_intelligence', config)}
+          />
+        )}
+
+        {scanModules.enable_social_engineering && (
+          <SocialEngineeringConfig 
+            config={moduleConfigs.social_engineering || {}}
+            onChange={(config) => updateModuleConfig('social_engineering', config)}
+          />
+        )}
+
+        {scanModules.enable_malware_analysis && (
+          <MalwareAnalysisConfig 
+            config={moduleConfigs.malware_analysis || {}}
+            onChange={(config) => updateModuleConfig('malware_analysis', config)}
+          />
+        )}
+
+        {scanModules.enable_compliance_check && (
+          <ComplianceCheckConfig 
+            config={moduleConfigs.compliance_check || {}}
+            onChange={(config) => updateModuleConfig('compliance_check', config)}
+          />
+        )}
+
         {(scanModules.enable_exploitation || 
           scanModules.enable_bruteforce || 
           scanModules.enable_shodan_lookup ||
           scanModules.enable_mail_server_check ||
-          scanModules.enable_ssh_security_check) && (
+          scanModules.enable_ssh_security_check ||
+          scanModules.enable_wireless_scan ||
+          scanModules.enable_wireless_adv_scan ||
+          scanModules.enable_desktop_pe_analysis ||
+          scanModules.enable_mobile_app_scan ||
+          scanModules.enable_web_crawling ||
+          scanModules.enable_cloud_security_scan ||
+          scanModules.enable_container_security ||
+          scanModules.enable_iot_security_scan ||
+          scanModules.enable_firmware_analysis ||
+          scanModules.enable_scada_security ||
+          scanModules.enable_dns_enumeration ||
+          scanModules.enable_ssl_tls_analysis ||
+          scanModules.enable_osint_gathering ||
+          scanModules.enable_forensics_analysis ||
+          scanModules.enable_physical_security) && (
           <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
             <h4 className="font-medium text-blue-700 mb-2">Additional Enabled Modules</h4>
             <p className="text-sm text-blue-600">
