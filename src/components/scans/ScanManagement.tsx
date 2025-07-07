@@ -7,7 +7,7 @@ import { scansAPI, assetsAPI } from "@/services/api";
 import { InitiateScanDialog } from "./InitiateScanDialog";
 import { ScanDetailsDialog } from "./ScanDetailsDialog";
 import { ScanCard } from "./ScanCard";
-import { Play, Plus, AlertCircle } from "lucide-react";
+import { Play, Plus, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 export const ScanManagement = () => {
@@ -15,24 +15,51 @@ export const ScanManagement = () => {
   const [showInitiateDialog, setShowInitiateDialog] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: scansData, isLoading: scansLoading, error: scansError } = useQuery({
+  const { data: scansData, isLoading: scansLoading, error: scansError, refetch: refetchScans } = useQuery({
     queryKey: ['scans'],
-    queryFn: () => scansAPI.list(),
-    refetchInterval: (query) => {
-      const hasRunningScans = query.state.data?.data?.some((scan: any) => scan.status === 'running');
-      return hasRunningScans ? 10000 : false; // Only refetch if there are running scans
+    queryFn: async () => {
+      try {
+        return await scansAPI.list();
+      } catch (error) {
+        console.error('Failed to fetch scans:', error);
+        throw error;
+      }
     },
-    staleTime: 5000,
+    refetchInterval: (query) => {
+      if (query.state.error) return false;
+      const hasRunningScans = query.state.data?.data?.some((scan: any) => scan.status === 'running');
+      return hasRunningScans ? 15000 : false;
+    },
+    staleTime: 10000,
     refetchOnWindowFocus: false,
-    retry: 2
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 404 || error?.response?.status === 401) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 
-  const { data: assetsData, error: assetsError } = useQuery({
+  const { data: assetsData, error: assetsError, refetch: refetchAssets } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => assetsAPI.list(),
-    staleTime: 300000, // 5 minutes
+    queryFn: async () => {
+      try {
+        return await assetsAPI.list();
+      } catch (error) {
+        console.error('Failed to fetch assets:', error);
+        throw error;
+      }
+    },
+    staleTime: 300000,
     refetchOnWindowFocus: false,
-    retry: 2
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 404 || error?.response?.status === 401) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 
   const cancelScanMutation = useMutation({
@@ -74,13 +101,24 @@ export const ScanManagement = () => {
     cancelScanMutation.mutate(scanId);
   }, [cancelScanMutation]);
 
+  const handleRetry = useCallback(() => {
+    refetchScans();
+    refetchAssets();
+  }, [refetchScans, refetchAssets]);
+
   if (scansError || assetsError) {
     return (
       <Card className="bg-red-50 border-red-200">
         <CardContent className="p-6 text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <p className="text-red-700 text-lg font-medium">Failed to load scan data</p>
-          <p className="text-red-600 mt-2">Please check your connection and try again</p>
+          <p className="text-red-600 mt-2 mb-4">
+            {scansError?.message || assetsError?.message || "Please check your connection and try again"}
+          </p>
+          <Button onClick={handleRetry} variant="outline" className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </Button>
         </CardContent>
       </Card>
     );
@@ -130,7 +168,7 @@ export const ScanManagement = () => {
           <div className="space-y-4">
             {scans.length === 0 ? (
               <div className="text-center py-12">
-                <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <Play className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500 text-lg">No scans found</p>
                 <p className="text-gray-400">Start your first security scan to see results here</p>
               </div>

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { findingsAPI } from "@/services/api";
 import { FindingDetailsDialog } from "./FindingDetailsDialog";
-import { AlertTriangle, Search, Filter, Eye } from "lucide-react";
+import { AlertTriangle, Search, Filter, Eye, RefreshCw } from "lucide-react";
 
 export const FindingsManagement = () => {
   const [selectedFinding, setSelectedFinding] = useState<string | null>(null);
@@ -18,12 +18,28 @@ export const FindingsManagement = () => {
     search: ""
   });
 
-  const { data: findingsData, isLoading, error } = useQuery({
+  const { data: findingsData, isLoading, error, refetch } = useQuery({
     queryKey: ['findings', filters],
-    queryFn: () => findingsAPI.list(filters),
-    staleTime: 30000, // 30 seconds
+    queryFn: async () => {
+      try {
+        const cleanFilters = Object.fromEntries(
+          Object.entries(filters).filter(([_, value]) => value !== "")
+        );
+        return await findingsAPI.list(cleanFilters);
+      } catch (error) {
+        console.error('Failed to fetch findings:', error);
+        throw error;
+      }
+    },
+    staleTime: 30000,
     refetchOnWindowFocus: false,
-    retry: 2
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 404 || error?.response?.status === 401) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 
   const findings = useMemo(() => findingsData?.data || [], [findingsData]);
@@ -39,6 +55,10 @@ export const FindingsManagement = () => {
   const handleCloseDetails = useCallback(() => {
     setSelectedFinding(null);
   }, []);
+
+  const handleRetry = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
@@ -66,7 +86,13 @@ export const FindingsManagement = () => {
         <CardContent className="p-6 text-center">
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <p className="text-red-700 text-lg font-medium">Failed to load findings</p>
-          <p className="text-red-600 mt-2">Please check your connection and try again</p>
+          <p className="text-red-600 mt-2 mb-4">
+            {error?.message || "Please check your connection and try again"}
+          </p>
+          <Button onClick={handleRetry} variant="outline" className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </Button>
         </CardContent>
       </Card>
     );
@@ -99,7 +125,7 @@ export const FindingsManagement = () => {
                 <SelectValue placeholder="All Severities" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Severities</SelectItem>
+                <SelectItem value="all">All Severities</SelectItem>
                 <SelectItem value="Critical">Critical</SelectItem>
                 <SelectItem value="High">High</SelectItem>
                 <SelectItem value="Medium">Medium</SelectItem>
@@ -112,7 +138,7 @@ export const FindingsManagement = () => {
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="new">New</SelectItem>
                 <SelectItem value="triaged">Triaged</SelectItem>
                 <SelectItem value="remediated">Remediated</SelectItem>

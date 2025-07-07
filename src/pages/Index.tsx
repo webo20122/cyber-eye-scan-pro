@@ -41,23 +41,45 @@ const Index = () => {
 
   const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useQuery({
     queryKey: ['dashboard'],
-    queryFn: () => dashboardAPI.getSummary(),
+    queryFn: async () => {
+      try {
+        return await dashboardAPI.getSummary();
+      } catch (error) {
+        console.error('Dashboard API error:', error);
+        // Return default data instead of throwing
+        return {
+          data: {
+            total_scans: 0,
+            scans_by_status: {},
+            total_findings: 0,
+            findings_by_severity: {},
+            recent_scans: []
+          }
+        };
+      }
+    },
     enabled: !!user && hasPermission?.('dashboard:view'),
-    staleTime: 60000, // 1 minute
+    staleTime: 60000,
     refetchOnWindowFocus: false,
-    retry: 2
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 404 || error?.response?.status === 401) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 
   const stats: DashboardData = useMemo(() => {
     if (dashboardData?.data) {
       return {
-        total_scans: dashboardData.data.total_scans,
-        scans_by_status: dashboardData.data.scans_by_status,
-        total_findings: dashboardData.data.total_findings,
-        findings_by_severity: dashboardData.data.findings_by_severity,
-        recent_scans: dashboardData.data.recent_scans.map((scan: any) => ({
+        total_scans: dashboardData.data.total_scans || 0,
+        scans_by_status: dashboardData.data.scans_by_status || {},
+        total_findings: dashboardData.data.total_findings || 0,
+        findings_by_severity: dashboardData.data.findings_by_severity || {},
+        recent_scans: (dashboardData.data.recent_scans || []).map((scan: any) => ({
           scan_id: scan.scan_id,
-          name: scan.scan_name,
+          name: scan.scan_name || scan.name,
           status: scan.status,
           created_at: scan.created_at,
           asset_id: scan.asset_id
@@ -90,6 +112,7 @@ const Index = () => {
           </p>
         </div>
 
+        {/* Only show metrics if no dashboard error */}
         {!dashboardError && <MetricsOverview stats={stats} />}
 
         {/* Main Navigation Tabs */}
