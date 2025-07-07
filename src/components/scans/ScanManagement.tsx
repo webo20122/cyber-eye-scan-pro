@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,19 +15,24 @@ export const ScanManagement = () => {
   const [showInitiateDialog, setShowInitiateDialog] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: scansData, isLoading: scansLoading } = useQuery({
+  const { data: scansData, isLoading: scansLoading, error: scansError } = useQuery({
     queryKey: ['scans'],
     queryFn: () => scansAPI.list(),
-    refetchInterval: 5000,
-    staleTime: 1000,
-    refetchOnWindowFocus: false
+    refetchInterval: (query) => {
+      const hasRunningScans = query.state.data?.data?.some((scan: any) => scan.status === 'running');
+      return hasRunningScans ? 10000 : false; // Only refetch if there are running scans
+    },
+    staleTime: 5000,
+    refetchOnWindowFocus: false,
+    retry: 2
   });
 
-  const { data: assetsData } = useQuery({
+  const { data: assetsData, error: assetsError } = useQuery({
     queryKey: ['assets'],
     queryFn: () => assetsAPI.list(),
-    staleTime: 30000,
-    refetchOnWindowFocus: false
+    staleTime: 300000, // 5 minutes
+    refetchOnWindowFocus: false,
+    retry: 2
   });
 
   const cancelScanMutation = useMutation({
@@ -41,29 +46,50 @@ export const ScanManagement = () => {
     }
   });
 
-  const scans = scansData?.data || [];
-  const assets = assetsData?.data || [];
+  const scans = useMemo(() => scansData?.data || [], [scansData]);
+  const assets = useMemo(() => assetsData?.data || [], [assetsData]);
 
-  const handleNewScanClick = () => {
-    console.log("Opening scan dialog");
+  const handleNewScanClick = useCallback(() => {
     setShowInitiateDialog(true);
-  };
+  }, []);
 
-  const handleDialogClose = () => {
-    console.log("Closing scan dialog");
+  const handleDialogClose = useCallback(() => {
     setShowInitiateDialog(false);
-  };
+  }, []);
 
-  const handleScanSuccess = () => {
-    console.log("Scan initiated successfully");
+  const handleScanSuccess = useCallback(() => {
     setShowInitiateDialog(false);
     queryClient.invalidateQueries({ queryKey: ['scans'] });
-  };
+  }, [queryClient]);
+
+  const handleViewDetails = useCallback((scanId: string) => {
+    setSelectedScan(scanId);
+  }, []);
+
+  const handleCloseDetails = useCallback(() => {
+    setSelectedScan(null);
+  }, []);
+
+  const handleCancelScan = useCallback((scanId: string) => {
+    cancelScanMutation.mutate(scanId);
+  }, [cancelScanMutation]);
+
+  if (scansError || assetsError) {
+    return (
+      <Card className="bg-red-50 border-red-200">
+        <CardContent className="p-6 text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-700 text-lg font-medium">Failed to load scan data</p>
+          <p className="text-red-600 mt-2">Please check your connection and try again</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (scansLoading) {
     return (
       <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
+        {[1, 2, 3].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardHeader>
               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -116,8 +142,8 @@ export const ScanManagement = () => {
                     key={scan.scan_id}
                     scan={scan}
                     asset={asset}
-                    onViewDetails={setSelectedScan}
-                    onCancel={cancelScanMutation.mutate}
+                    onViewDetails={handleViewDetails}
+                    onCancel={handleCancelScan}
                     isCancelling={cancelScanMutation.isPending}
                   />
                 );
@@ -140,7 +166,7 @@ export const ScanManagement = () => {
         <ScanDetailsDialog
           scanId={selectedScan}
           open={!!selectedScan}
-          onOpenChange={() => setSelectedScan(null)}
+          onOpenChange={handleCloseDetails}
         />
       )}
     </div>

@@ -129,6 +129,7 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
       resetForm();
     },
     onError: (error: any) => {
+      console.error("Scan initiation error:", error);
       toast.error(error.response?.data?.message || "Failed to initiate penetration test");
     }
   });
@@ -252,8 +253,16 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
     toast.success(`Applied ${preset.name} configuration`);
   }, []);
 
+  // Reset form when dialog closes
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    if (!newOpen) {
+      resetForm();
+    }
+    onOpenChange(newOpen);
+  }, [onOpenChange, resetForm]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -315,7 +324,7 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
               </span> security modules selected
             </div>
             <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                 Cancel
               </Button>
               <Button 

@@ -20,6 +20,7 @@ import {
   FileText,
   UserCog
 } from "lucide-react";
+import { useMemo } from "react";
 
 interface DashboardData {
   total_scans: number;
@@ -38,33 +39,41 @@ interface DashboardData {
 const Index = () => {
   const { user, hasPermission } = useAuth();
 
-  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
+  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => dashboardAPI.getSummary(),
-    enabled: !!user && hasPermission('dashboard:view')
+    enabled: !!user && hasPermission?.('dashboard:view'),
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
+    retry: 2
   });
 
-  if (!user) return null;
+  const stats: DashboardData = useMemo(() => {
+    if (dashboardData?.data) {
+      return {
+        total_scans: dashboardData.data.total_scans,
+        scans_by_status: dashboardData.data.scans_by_status,
+        total_findings: dashboardData.data.total_findings,
+        findings_by_severity: dashboardData.data.findings_by_severity,
+        recent_scans: dashboardData.data.recent_scans.map((scan: any) => ({
+          scan_id: scan.scan_id,
+          name: scan.scan_name,
+          status: scan.status,
+          created_at: scan.created_at,
+          asset_id: scan.asset_id
+        }))
+      };
+    }
+    return {
+      total_scans: 0,
+      scans_by_status: {},
+      total_findings: 0,
+      findings_by_severity: {},
+      recent_scans: []
+    };
+  }, [dashboardData]);
 
-  const stats: DashboardData = dashboardData?.data ? {
-    total_scans: dashboardData.data.total_scans,
-    scans_by_status: dashboardData.data.scans_by_status,
-    total_findings: dashboardData.data.total_findings,
-    findings_by_severity: dashboardData.data.findings_by_severity,
-    recent_scans: dashboardData.data.recent_scans.map((scan: any) => ({
-      scan_id: scan.scan_id,
-      name: scan.scan_name,
-      status: scan.status,
-      created_at: scan.created_at,
-      asset_id: scan.asset_id
-    }))
-  } : {
-    total_scans: 0,
-    scans_by_status: {},
-    total_findings: 0,
-    findings_by_severity: {},
-    recent_scans: []
-  };
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -81,7 +90,7 @@ const Index = () => {
           </p>
         </div>
 
-        <MetricsOverview stats={stats} />
+        {!dashboardError && <MetricsOverview stats={stats} />}
 
         {/* Main Navigation Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">

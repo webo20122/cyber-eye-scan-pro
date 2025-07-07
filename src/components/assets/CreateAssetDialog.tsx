@@ -19,9 +19,9 @@ interface CreateAssetDialogProps {
 
 export const CreateAssetDialog = ({ open, onOpenChange, onSuccess }: CreateAssetDialogProps) => {
   const [formData, setFormData] = useState({
-    name: "",
-    type: "",
-    value: "",
+    asset_name: "",
+    asset_type: "",
+    target_value: "",
     description: "",
     tags: ""
   });
@@ -34,31 +34,40 @@ export const CreateAssetDialog = ({ open, onOpenChange, onSuccess }: CreateAsset
       resetForm();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to create asset");
+      console.error("Asset creation error:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Failed to create asset";
+      toast.error(errorMessage);
     }
   });
 
   const resetForm = () => {
     setFormData({
-      name: "",
-      type: "",
-      value: "",
+      asset_name: "",
+      asset_type: "",
+      target_value: "",
       description: "",
       tags: ""
     });
   };
 
-  const handleSubmit = () => {
-    if (!formData.name || !formData.type || !formData.value) {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.asset_name || !formData.asset_type || !formData.target_value) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     const assetData = {
-      ...formData,
+      asset_name: formData.asset_name,
+      asset_type: formData.asset_type,
+      target_value: formData.target_value,
+      description: formData.description || "",
+      is_active: true,
       tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : []
     };
 
+    console.log("Creating asset with data:", assetData);
     createAssetMutation.mutate(assetData);
   };
 
@@ -71,10 +80,17 @@ export const CreateAssetDialog = ({ open, onOpenChange, onSuccess }: CreateAsset
     { value: 'NetworkSegment', label: 'Network Segment', placeholder: '192.168.1.0/24' }
   ];
 
-  const selectedType = assetTypes.find(type => type.value === formData.type);
+  const selectedType = assetTypes.find(type => type.value === formData.asset_type);
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      resetForm();
+    }
+    onOpenChange(newOpen);
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -86,20 +102,23 @@ export const CreateAssetDialog = ({ open, onOpenChange, onSuccess }: CreateAsset
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Asset Name *</Label>
+            <Label htmlFor="asset_name">Asset Name *</Label>
             <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              id="asset_name"
+              value={formData.asset_name}
+              onChange={(e) => setFormData(prev => ({ ...prev, asset_name: e.target.value }))}
               placeholder="Enter a descriptive name"
             />
           </div>
 
           <div>
-            <Label htmlFor="type">Asset Type *</Label>
-            <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value, value: "" }))}>
+            <Label htmlFor="asset_type">Asset Type *</Label>
+            <Select 
+              value={formData.asset_type} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, asset_type: value, target_value: "" }))}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select asset type" />
               </SelectTrigger>
@@ -114,11 +133,11 @@ export const CreateAssetDialog = ({ open, onOpenChange, onSuccess }: CreateAsset
           </div>
 
           <div>
-            <Label htmlFor="value">Target Value *</Label>
+            <Label htmlFor="target_value">Target Value *</Label>
             <Input
-              id="value"
-              value={formData.value}
-              onChange={(e) => setFormData(prev => ({ ...prev, value: e.target.value }))}
+              id="target_value"
+              value={formData.target_value}
+              onChange={(e) => setFormData(prev => ({ ...prev, target_value: e.target.value }))}
               placeholder={selectedType?.placeholder || "Enter target value"}
             />
           </div>
@@ -144,20 +163,20 @@ export const CreateAssetDialog = ({ open, onOpenChange, onSuccess }: CreateAsset
             />
             <p className="text-xs text-gray-500 mt-1">Separate tags with commas</p>
           </div>
-        </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={createAssetMutation.isPending}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {createAssetMutation.isPending ? "Creating..." : "Create Asset"}
-          </Button>
-        </div>
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit"
+              disabled={createAssetMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {createAssetMutation.isPending ? "Creating..." : "Create Asset"}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
