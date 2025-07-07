@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
@@ -72,52 +72,53 @@ interface InitiateScanDialogProps {
   onSuccess: () => void;
 }
 
+const initialScanModules: ScanModules = {
+  // Core modules enabled by default
+  enable_network_scan: true,
+  enable_web_application_scan: true,
+  enable_vulnerability_check: true,
+  enable_active_directory_enumeration: false,
+  
+  // All other modules disabled by default
+  enable_credentials_leak: false,
+  enable_database_enum_check: false,
+  enable_snmp_enum: false,
+  enable_ssh_security_check: false,
+  enable_mail_server_check: false,
+  enable_shodan_lookup: false,
+  enable_dns_enumeration: false,
+  enable_ssl_tls_analysis: false,
+  enable_wireless_scan: false,
+  enable_wireless_adv_scan: false,
+  enable_sast_scan: false,
+  enable_api_scan: false,
+  enable_desktop_pe_analysis: false,
+  enable_mobile_app_scan: false,
+  enable_web_crawling: false,
+  enable_cloud_security_scan: false,
+  enable_container_security: false,
+  enable_iot_security_scan: false,
+  enable_firmware_analysis: false,
+  enable_scada_security: false,
+  enable_exploitation: false,
+  enable_bruteforce: false,
+  enable_internal_vuln_scan_gvm: false,
+  enable_adaptive_attack_path_mapping: false,
+  enable_automated_vulnerability_validation: false,
+  enable_passive_recon: false,
+  enable_osint_gathering: false,
+  enable_threat_intelligence: false,
+  enable_social_engineering: false,
+  enable_malware_analysis: false,
+  enable_forensics_analysis: false,
+  enable_physical_security: false,
+  enable_compliance_check: false
+};
+
 export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: InitiateScanDialogProps) => {
   const [scanName, setScanName] = useState("");
   const [selectedAsset, setSelectedAsset] = useState("");
-  const [scanModules, setScanModules] = useState<ScanModules>({
-    // Core modules enabled by default
-    enable_network_scan: true,
-    enable_web_application_scan: true,
-    enable_vulnerability_check: true,
-    enable_active_directory_enumeration: false,
-    
-    // All other modules disabled by default
-    enable_credentials_leak: false,
-    enable_database_enum_check: false,
-    enable_snmp_enum: false,
-    enable_ssh_security_check: false,
-    enable_mail_server_check: false,
-    enable_shodan_lookup: false,
-    enable_dns_enumeration: false,
-    enable_ssl_tls_analysis: false,
-    enable_wireless_scan: false,
-    enable_wireless_adv_scan: false,
-    enable_sast_scan: false,
-    enable_api_scan: false,
-    enable_desktop_pe_analysis: false,
-    enable_mobile_app_scan: false,
-    enable_web_crawling: false,
-    enable_cloud_security_scan: false,
-    enable_container_security: false,
-    enable_iot_security_scan: false,
-    enable_firmware_analysis: false,
-    enable_scada_security: false,
-    enable_exploitation: false,
-    enable_bruteforce: false,
-    enable_internal_vuln_scan_gvm: false,
-    enable_adaptive_attack_path_mapping: false,
-    enable_automated_vulnerability_validation: false,
-    enable_passive_recon: false,
-    enable_osint_gathering: false,
-    enable_threat_intelligence: false,
-    enable_social_engineering: false,
-    enable_malware_analysis: false,
-    enable_forensics_analysis: false,
-    enable_physical_security: false,
-    enable_compliance_check: false
-  });
-
+  const [scanModules, setScanModules] = useState<ScanModules>(initialScanModules);
   const [moduleConfigs, setModuleConfigs] = useState<Record<string, any>>({});
 
   const initiateScanMutation = useMutation({
@@ -132,52 +133,14 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
     }
   });
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setScanName("");
     setSelectedAsset("");
-    setScanModules({
-      enable_network_scan: true,
-      enable_web_application_scan: true,
-      enable_vulnerability_check: true,
-      enable_active_directory_enumeration: false,
-      enable_credentials_leak: false,
-      enable_database_enum_check: false,
-      enable_snmp_enum: false,
-      enable_ssh_security_check: false,
-      enable_mail_server_check: false,
-      enable_shodan_lookup: false,
-      enable_dns_enumeration: false,
-      enable_ssl_tls_analysis: false,
-      enable_wireless_scan: false,
-      enable_wireless_adv_scan: false,
-      enable_sast_scan: false,
-      enable_api_scan: false,
-      enable_desktop_pe_analysis: false,
-      enable_mobile_app_scan: false,
-      enable_web_crawling: false,
-      enable_cloud_security_scan: false,
-      enable_container_security: false,
-      enable_iot_security_scan: false,
-      enable_firmware_analysis: false,
-      enable_scada_security: false,
-      enable_exploitation: false,
-      enable_bruteforce: false,
-      enable_internal_vuln_scan_gvm: false,
-      enable_adaptive_attack_path_mapping: false,
-      enable_automated_vulnerability_validation: false,
-      enable_passive_recon: false,
-      enable_osint_gathering: false,
-      enable_threat_intelligence: false,
-      enable_social_engineering: false,
-      enable_malware_analysis: false,
-      enable_forensics_analysis: false,
-      enable_physical_security: false,
-      enable_compliance_check: false
-    });
+    setScanModules(initialScanModules);
     setModuleConfigs({});
-  };
+  }, []);
 
-  const buildScanParameters = () => {
+  const buildScanParameters = useCallback(() => {
     const selectedAssetData = assets.find(a => a.asset_id === selectedAsset);
     const scanParameters: any = {};
 
@@ -201,9 +164,14 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
     });
 
     return scanParameters;
-  };
+  }, [assets, selectedAsset, scanModules, moduleConfigs]);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback((e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     if (!scanName || !selectedAsset) {
       toast.error("Please fill in all required fields");
       return;
@@ -219,9 +187,9 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
     });
 
     toast.success(`Initiating comprehensive pentest with ${enabledModulesCount} security modules`);
-  };
+  }, [scanName, selectedAsset, buildScanParameters, scanModules, initiateScanMutation]);
 
-  const presetConfigurations = [
+  const presetConfigurations = useMemo(() => [
     {
       name: "Quick Security Assessment",
       description: "Essential security checks for rapid assessment",
@@ -271,15 +239,10 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
         enable_cloud_security_scan: true
       }
     }
-  ];
+  ], []);
 
-  const applyPreset = (preset: any) => {
-    const newModules = { ...scanModules };
-    // Reset all modules
-    Object.keys(newModules).forEach(key => {
-      newModules[key as keyof ScanModules] = false;
-    });
-    // Apply preset modules
+  const applyPreset = useCallback((preset: any) => {
+    const newModules = { ...initialScanModules };
     Object.entries(preset.modules).forEach(([key, enabled]) => {
       if (key in newModules) {
         newModules[key as keyof ScanModules] = enabled as boolean;
@@ -287,7 +250,7 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
     });
     setScanModules(newModules);
     toast.success(`Applied ${preset.name} configuration`);
-  };
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -302,7 +265,7 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Preset Configurations */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
             <div className="col-span-full mb-2">
@@ -312,6 +275,7 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
             {presetConfigurations.map((preset, index) => (
               <Button
                 key={index}
+                type="button"
                 variant="outline"
                 className="h-auto p-4 text-left flex flex-col items-start gap-2"
                 onClick={() => applyPreset(preset)}
@@ -343,37 +307,37 @@ export const InitiateScanDialog = ({ open, onOpenChange, assets, onSuccess }: In
             moduleConfigs={moduleConfigs}
             setModuleConfigs={setModuleConfigs}
           />
-        </div>
 
-        <div className="flex justify-between items-center pt-4 border-t">
-          <div className="text-sm text-gray-600">
-            <span className="font-medium">
-              {Object.values(scanModules).filter(Boolean).length}
-            </span> security modules selected
+          <div className="flex justify-between items-center pt-4 border-t">
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">
+                {Object.values(scanModules).filter(Boolean).length}
+              </span> security modules selected
+            </div>
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                disabled={initiateScanMutation.isPending}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                {initiateScanMutation.isPending ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Initiating Pentest...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    Launch Penetration Test
+                  </div>
+                )}
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={initiateScanMutation.isPending}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              {initiateScanMutation.isPending ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Initiating Pentest...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Launch Penetration Test
-                </div>
-              )}
-            </Button>
-          </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

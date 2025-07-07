@@ -18,12 +18,16 @@ export const ScanManagement = () => {
   const { data: scansData, isLoading: scansLoading } = useQuery({
     queryKey: ['scans'],
     queryFn: () => scansAPI.list(),
-    refetchInterval: 5000
+    refetchInterval: 5000,
+    staleTime: 1000,
+    refetchOnWindowFocus: false
   });
 
   const { data: assetsData } = useQuery({
     queryKey: ['assets'],
-    queryFn: () => assetsAPI.list()
+    queryFn: () => assetsAPI.list(),
+    staleTime: 30000,
+    refetchOnWindowFocus: false
   });
 
   const cancelScanMutation = useMutation({
@@ -39,6 +43,22 @@ export const ScanManagement = () => {
 
   const scans = scansData?.data || [];
   const assets = assetsData?.data || [];
+
+  const handleNewScanClick = () => {
+    console.log("Opening scan dialog");
+    setShowInitiateDialog(true);
+  };
+
+  const handleDialogClose = () => {
+    console.log("Closing scan dialog");
+    setShowInitiateDialog(false);
+  };
+
+  const handleScanSuccess = () => {
+    console.log("Scan initiated successfully");
+    setShowInitiateDialog(false);
+    queryClient.invalidateQueries({ queryKey: ['scans'] });
+  };
 
   if (scansLoading) {
     return (
@@ -70,7 +90,11 @@ export const ScanManagement = () => {
               </CardTitle>
               <CardDescription>Initiate and monitor security scans</CardDescription>
             </div>
-            <Button onClick={() => setShowInitiateDialog(true)} className="bg-blue-600 hover:bg-blue-700">
+            <Button 
+              onClick={handleNewScanClick} 
+              className="bg-blue-600 hover:bg-blue-700"
+              type="button"
+            >
               <Plus className="h-4 w-4 mr-2" />
               New Scan
             </Button>
@@ -103,15 +127,14 @@ export const ScanManagement = () => {
         </CardContent>
       </Card>
 
-      <InitiateScanDialog
-        open={showInitiateDialog}
-        onOpenChange={setShowInitiateDialog}
-        assets={assets}
-        onSuccess={() => {
-          setShowInitiateDialog(false);
-          queryClient.invalidateQueries({ queryKey: ['scans'] });
-        }}
-      />
+      {showInitiateDialog && (
+        <InitiateScanDialog
+          open={showInitiateDialog}
+          onOpenChange={handleDialogClose}
+          assets={assets}
+          onSuccess={handleScanSuccess}
+        />
+      )}
 
       {selectedScan && (
         <ScanDetailsDialog

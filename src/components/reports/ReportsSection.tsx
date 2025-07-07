@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { dashboardAPI, scansAPI } from "@/services/api";
+import { scansAPI, reportsAPI } from "@/services/api";
 import { ReportDetailsDialog } from "./ReportDetailsDialog";
 import { 
   FileText, 
@@ -26,32 +26,27 @@ export const ReportsSection = () => {
 
   const { data: scansData, isLoading } = useQuery({
     queryKey: ['scans'],
-    queryFn: () => scansAPI.list()
+    queryFn: () => scansAPI.list(),
+    staleTime: 30000,
+    refetchOnWindowFocus: false
   });
 
   const handleDownloadReport = async (scanId: string, scanName: string) => {
     try {
-      const response = await fetch(`/api/v1/reports/${scanId}/download_pdf`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      });
+      const response = await reportsAPI.downloadPDF(scanId);
       
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${scanName}_report.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        toast.success("Report downloaded successfully");
-      } else {
-        throw new Error("Failed to download report");
-      }
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${scanName}_report.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Report downloaded successfully");
     } catch (error) {
+      console.error("Download error:", error);
       toast.error("Failed to download report");
     }
   };
@@ -59,7 +54,7 @@ export const ReportsSection = () => {
   const scans = scansData?.data || [];
   const completedScans = scans.filter((scan: any) => scan.status === 'completed');
   const filteredScans = completedScans.filter((scan: any) =>
-    scan.name.toLowerCase().includes(searchTerm.toLowerCase())
+    scan.scan_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
@@ -185,10 +180,10 @@ export const ReportsSection = () => {
                     <CardContent className="p-6">
                       <div className="space-y-4">
                         <div>
-                          <h3 className="font-semibold text-lg mb-2">{scan.name}</h3>
+                          <h3 className="font-semibold text-lg mb-2">{scan.scan_name}</h3>
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <Calendar className="h-3 w-3" />
-                            <span>Completed: {new Date(scan.completed_at).toLocaleDateString()}</span>
+                            <span>Completed: {new Date(scan.end_time || scan.updated_at).toLocaleDateString()}</span>
                           </div>
                         </div>
 
@@ -216,7 +211,7 @@ export const ReportsSection = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDownloadReport(scan.scan_id, scan.name)}
+                            onClick={() => handleDownloadReport(scan.scan_id, scan.scan_name)}
                             className="flex-1"
                           >
                             <Download className="h-4 w-4 mr-1" />
